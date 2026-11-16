@@ -3,7 +3,9 @@
 
 # Local pointer to the current feature directory. Rewritten every time you
 # switch features, so it is per-checkout state rather than something to share.
-feature.json
+# Team decision (HW4): we track feature.json so a fresh clone can run
+# /speckit-plan, /speckit-tasks, etc. without "Feature directory not found".
+# feature.json
 
 # Per-machine extension config overrides.
 extensions/*/local-config.yml
