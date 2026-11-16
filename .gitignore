@@ -1,0 +1,17 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+.vscode/
+.idea/
+
+# Python (goal-model scripts, local server)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs and env
+*.log
+.env*
