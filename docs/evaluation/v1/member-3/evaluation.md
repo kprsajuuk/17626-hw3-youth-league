@@ -30,6 +30,7 @@
   - Proposed spec change: confirmation counts **per child**. A child is confirmed when a parent who was notified *about that child* confirms. A family is confirmed only when all of its children on the affected team(s) are. Escalation stops for a parent only when every child named in that parent's notice is confirmed. In Family E: Wes's confirmation covers Emma; Eli stays unconfirmed, so Erin is still called and Family E stays on Ray's list. Update the Clarification, REQ-10, REQ-13 and the "Assumptions" bullet on family confirmation; add an acceptance scenario for Family E.
   - Alternative (simpler): a restricted parent's confirmation never counts for the family. Weaker, because it ignores Wes's legitimate confirmation for Emma.
   - Ask Brenda (YG:B66, YH:B32): does a parent with a court order usually live in a separate household, and should the coach treat them as a separate contact? There is no interview evidence on how confirmation and custody interact, so the per-child rule is an assumption.
+  - **Decided 2026-11-17: adopted, confirmation counted per child (CR-8).** Open question for Brenda: OQ-8.
 - **Same as an existing team observation?** New. Related to OBS-4 (escalation gaps), but a different cause.
 
 ### OBS-11 — The spec contradicts itself on whether coaches receive texts; the prototype texts them
@@ -39,6 +40,7 @@
 - **Classification:** requirements issue (inconsistent spec). REQ-10 says a text goes to every "recipient" who has not confirmed, and coaches are recipients (REQ-07). But the Assumptions section says "Coaches receive the in-app alert and email for their team's changes; phone calls go only to parents", which suggests coaches get **only** in-app and email. The agent followed REQ-10 (`dispatchFinalNotice()` and `processDueEscalations()` in `domain/delivery.js` treat coaches like parents, except for calls). Both readings are defensible, so this is not an implementation defect.
 - **Goal(s) affected:** G-85 *Avoid[DuplicateAndTrivialNotifications]* (a coach on the touchline gets three messages for one change), G-30 *TextSent If NotAckedWithin5Min Or ChangeUrgent* (which agent the goal applies to is unclear).
 - **What needs to change:** spec change (pick one reading and write it in both places), plus stakeholder clarification. Ask Ray whether he wants a text for his own team's changes, or whether in-app and email are enough because he is already watching for the change. If coaches should not be texted, the code change is small: skip coach recipients when scheduling texts.
+  - **Decided 2026-11-17: coaches do receive texts (CR-9).** REQ-10 stays as written; the Assumptions bullet is rewritten to match. No code change. Confirm with Ray: OQ-9.
 - **Same as an existing team observation?** New. It is related to OBS-3 (urgent changes send every channel at once), which is about parents. OBS-11 is about which *roles* the escalation applies to.
 
 ### Also confirmed: OBS-3

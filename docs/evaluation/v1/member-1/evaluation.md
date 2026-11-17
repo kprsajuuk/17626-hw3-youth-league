@@ -60,7 +60,7 @@ Each observation below is classified as one of:
 
 ## OBS-6 — The implementation added validation rules that are not in the spec
 
-- **What we saw:** the prototype rejects (a) a "change" that does not change anything, e.g. Field 3 → Field 3; (b) a verification time later than the current time; (c) an empty instruction. The messages are sensible (`X2`/`X3`/`X4` probes), but rules (a) and (b) are not written anywhere in the spec.
+- **What we saw:** the prototype rejects (a) a "change" that does not change anything, e.g. Field 3 → Field 3; (b) a verification time later than the current time; (c) an empty instruction. The messages are sensible (`X2_same_field_rejected.png`, `X3_verification_in_future_rejected.png`, `X4_empty_instruction_rejected.png`), but rules (a) and (b) are not written anywhere in the spec.
 - **Classification: requirements issue.** The rules are reasonable, but they violate Constitution Principle I ("no behavior unless it appears in spec.md"). The agent had to invent them because the spec was silent.
 - **What needs to change:** add these rules to REQ-01 and REQ-03 in V2, so that the spec describes the behavior that actually exists.
 

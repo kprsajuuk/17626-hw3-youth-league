@@ -1,6 +1,6 @@
 # Prototype V1 Evaluation — Member 2
 
-**Evaluator:** Member 2. OBS-7 and OBS-8 come from Member 2's own use of the prototype. OBS-9 comes from a Claude-assisted review of the code against `spec.md`, which Member 2 checked.
+**Evaluator:** Member 2. OBS-7 and OBS-8 come from Member 2's own use of the prototype. The screenshots for OBS-7 and OBS-8 were captured afterwards with a Claude-assisted headless browser (Playwright, Chromium) against tag `v1`, following the steps described below. OBS-9 comes from a Claude-assisted review of the code against `spec.md`, which Member 2 checked.
 **Version evaluated:** tag `v1`. Run it with `python3 -m http.server 8000 --directory app` and open <http://localhost:8000/>.
 **Team summary:** [`../team-summary.md`](../team-summary.md). The OBS IDs below are team IDs.
 
@@ -19,7 +19,7 @@
 ### OBS-7 — Field and time cannot be changed in one notice
 
 - **What I did:** As Brenda, I opened the publish form to move a game to another field and another time at once (e.g. Field 3 at 10:00 → Field 7 at 13:00).
-- **What I saw:** The change type is a single choice (radio buttons): cancelled, moved field or moved time. Moving both takes two FINAL notices in a row. The second notice supersedes the first, so every family gets two alerts, and the 5-minute text and 2-minute call timers start over. (screenshot: _to add_)
+- **What I saw:** The change type is a single choice (radio buttons): cancelled, moved field or moved time. Moving both takes two FINAL notices in a row. The second notice supersedes the first, so every family gets two alerts, and the 5-minute text and 2-minute call timers start over. (screenshots: `screenshots/OBS-7_one_change_type_only.png` shows the single-choice form; `screenshots/OBS-7_admin_two_final_notices.png` and `screenshots/OBS-7_mike_two_alerts.png` show the result of moving Field 3 → Field 7 and then 10:00 → 13:00: Mike has one current FINAL notice and one superseded FINAL notice for the same real-world change.)
 - **Classification:** requirements issue. REQ-03 says a change "MUST be one of: cancelled, moved to another field, moved to another time". The code follows that exactly (`CHANGE_TYPES` and `publishChange()` in `domain/notices.js`; the radio group in `ui/adminView.js`).
 - **Goal(s) affected:** G-14 *OldAndNewDetailsAndActionShown*, G-85 *DuplicateAndTrivialNotifications* (YG:M77), G-02 *OfficialStatusClearAndCurrent*.
 - **What needs to change:** spec change. REQ-03: "moved" can change the field, the time, or both, in one notice. This also matches CR-2's "Reinstated", which already allows "a new field and/or time". Team decision; no stakeholder clarification needed. **Decided 2026-11-16: adopted (CR-5).**
@@ -33,7 +33,7 @@
   - Parents don't see the game at all, because `parentGames()` hides games whose kickoff has passed.
   - An unconfirmed FINAL alert for that game stays under "Needs your confirmation", because `alertsFor()` ignores time.
 
-  (screenshot: _to add_)
+  (screenshots, demo clock at Sat 10:01 after a FINAL field move for the 10:00 U10 game: `screenshots/OBS-8_admin_no_started_tag.png`: Brenda sees only "FINAL" and "Kickoff has passed — no changes can be published" inside the opened game; the 07:00 game still reads "As scheduled". `screenshots/OBS-8_coach_no_started_tag.png`: Ray's list shows no started tag. `screenshots/OBS-8_mike_game_gone_alert_still_open.png`: Max's U10 game is gone from Mike's "My children's games", but its alert is still under "Needs your confirmation (1)".)
 - **Classification:** requirements issue (missing information). No requirement says how a started game is shown or what happens to its unconfirmed alerts. The code blocks changes after kickoff (`gameStarted()` in `domain/store.js`) but has no spec to follow for the display.
 - **Goal(s) affected:** G-11 *GameEntryShowsCurrentStatus*, G-02 *OfficialStatusClearAndCurrent*, G-39 *EachChildGameStatusInOneView*, G-85.
 - **What needs to change:** a spec change (new requirement: a "Started" tag in every view, and alerts for started games stop asking for confirmation) **and stakeholder clarification**. There is no interview evidence, so ask Brenda / Ray whether a started game and its change history still matter (OQ-7). **Decided 2026-11-16: adopted in full (CR-6, new REQ-20); parents still see a started game until the end of that day.**
