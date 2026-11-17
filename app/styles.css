@@ -110,6 +110,10 @@ legend { font-weight: 600; padding: 0 4px; }
 .badge-scheduled { color: var(--muted); background: #eef1f4; border: 2px solid #eef1f4; }
 .badge-failed { color: #fff; background: var(--danger); border: 2px solid var(--danger); }
 .badge-ok { color: var(--final); background: #e7f4ec; border: 2px solid #e7f4ec; }
+/* REQ-20 (V2, CR-6): neutral grey pill next to (not instead of) the official status. */
+.badge-started { color: #374151; background: #e5e7eb; border: 2px solid #d1d5db; border-radius: 999px; }
+/* REQ-13 (V2, CR-7): dispatched, no delivery report yet. */
+.badge-sent { color: var(--muted); background: #fff; border: 2px solid #c8ccd2; }
 
 .status-line { font-weight: 700; font-size: 16px; }
 

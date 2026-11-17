@@ -1,13 +1,14 @@
 // Coach view. REQ-02 (no publish controls; status is read-only for coaches), REQ-12 (coach
 // confirms receipt of own alerts), REQ-13 (notice status for own team), Constitution VI
-// (team-scoped delivery log), REQ-05 (UNCONFIRMED heads-up to the coach's own team, CF-1).
+// (team-scoped delivery log), REQ-05 (UNCONFIRMED heads-up to the coach's own team, CF-1; V2 CR-1:
+// only while no FINAL notice exists), REQ-20 (started games: no heads-up, no confirmation).
 
 import { el, gameCard, gameDetail, noticeStatusTable, deliveryLogTable, alertCard } from './components.js';
 import { gameStatus, whereWhen, sendHeadsUp } from '../domain/notices.js';
 import { can } from '../domain/permissions.js';
 import { noticeStatus, confirmReceipt } from '../domain/confirmations.js';
 import { alertsFor, deliveryLog } from '../domain/queries.js';
-import { teamOfCoach } from '../domain/store.js';
+import { teamOfCoach, gameStarted } from '../domain/store.js';
 
 const freshUi = () => ({ tab: 'games', selectedGameId: null, headsUpText: '', headsUpMessage: null });
 let ui = freshUi();
@@ -20,7 +21,15 @@ const HEADS_UP_ERRORS = {
   'not-authorized': 'You can only send a heads-up for games of your own team.',
   'message-required': 'Write a short message first.',
   'game-started': 'This game has already started.',
+  'official-decision-published': 'An official decision has already been published.',
 };
+
+// REQ-05 (D-6), REQ-20: why the heads-up form is not offered for one of the coach's games.
+function noHeadsUpNote(store, game) {
+  if (gameStarted(store, game)) return HEADS_UP_ERRORS['game-started'];
+  if (game.currentNoticeId) return HEADS_UP_ERRORS['official-decision-published'];
+  return null;
+}
 
 // REQ-05
 function headsUpForm(store, personaId, game, team, rerender) {
@@ -83,7 +92,9 @@ export function render(store, personaId, root) {
       extra: selected
         ? el('div', {},
           gameDetail(store, game.id),
-          can(store, personaId, 'heads-up', game.id) ? headsUpForm(store, personaId, game, team, rerender) : null,
+          can(store, personaId, 'heads-up', game.id)
+            ? headsUpForm(store, personaId, game, team, rerender)
+            : el('p', { class: 'muted' }, noHeadsUpNote(store, game)),
           st.noticeId
             ? el('div', {}, el('h3', {}, `Notice status — ${team.name}`), noticeStatusTable(noticeStatus(store, st.noticeId, personaId)))
             : null)

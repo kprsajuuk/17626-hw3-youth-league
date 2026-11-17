@@ -1,7 +1,8 @@
 // Parent view. REQ-12 (unconfirmed FINAL alerts stay prominent until receipt is confirmed),
 // REQ-14 (receipt wording), REQ-08 (restricted children never shown), REQ-18 (names).
 // REQ-05: active heads-ups shown as UNCONFIRMED, separate from FINAL alerts.
-// REQ-15: one combined list of every eligible child's upcoming games (parentGames).
+// REQ-15: one combined list of every eligible child's games today and later (parentGames).
+// REQ-20 (V2, CR-6): started games tagged "Started"; their alerts move to "Earlier messages".
 
 import { el, statusBadge, alertCard } from './components.js';
 import { whereWhen } from '../domain/notices.js';
@@ -36,6 +37,7 @@ export function render(store, personaId, root) {
           el('span', {}, g.title),
           statusBadge(g.labelKind),
           g.labelKind === 'final' ? el('span', {}, g.status.label) : null,
+          g.started ? statusBadge('started') : null, // REQ-20
           el('span', { class: 'muted' }, whereWhen(store, g.gameId)),
           g.unconfirmedAlerts.length ? statusBadge('failed', 'Needs your confirmation') : null),
         g.labelKind === 'final'
@@ -45,7 +47,7 @@ export function render(store, personaId, root) {
           : el('p', { class: 'small muted' }, 'Official status: as scheduled.'),
         g.headsUps.map((h) => el('p', { class: 'small' },
           statusBadge('unconfirmed', 'UNCONFIRMED – not official yet'), ` Coach heads-up at ${formatTime(h.at)}; the official status above has not changed.`))))
-      : el('p', { class: 'muted' }, 'No upcoming games.')),
+      : el('p', { class: 'muted' }, 'No games today or later.')),
     el('h2', {}, 'Earlier messages'),
     el('div', {}, earlier.length ? earlier.map((a) => alertCard(a, onConfirm)) : el('p', { class: 'muted' }, 'None yet.')),
   );

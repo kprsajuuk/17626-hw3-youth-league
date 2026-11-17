@@ -20,13 +20,13 @@ test('REQ-09 / REQ-16 every recipient gets exactly one in-app and one email reco
   }
 });
 
-test('REQ-13 Family F has no email on file: email is failed with a reason, in-app delivered', () => {
+test('REQ-13 Family F has no email on file: email is failed with a reason, in-app sent (V2, CR-7)', () => {
   const s = freshStore();
   const n = publishField7(s);
   const recs = s.state.deliveries.filter((d) => d.messageId === n.id && d.personId === FAY);
   assertEqual(recs.find((d) => d.channel === 'email').status, 'failed');
   assertEqual(recs.find((d) => d.channel === 'email').reason, 'No email on file');
-  assertEqual(recs.find((d) => d.channel === 'in-app').status, 'delivered');
+  assertEqual(recs.find((d) => d.channel === 'in-app').status, 'sent');
 });
 
 test('REQ-08 no delivery record exists for restricted parent X', () => {
@@ -46,19 +46,20 @@ test('REQ-08 / REQ-18 message content names eligible children by first name + in
   assertTrue(!/Diaz/.test(dana.content.replace('Dana Diaz', '')), 'no child surname');
 });
 
-// ---- US6 escalation: REQ-10, REQ-11, Clarifications 2026-11-16 (OQ-1, OQ-2, family rule) ----
+// ---- US6 escalation: REQ-10, REQ-11, Clarifications 2026-11-16 (OQ-1, OQ-2); V2 per-child rule (CR-8) ----
 
 import { advanceClock } from '../src/domain/clock.js';
 import { confirmReceipt } from '../src/domain/confirmations.js';
 import { publishChange } from '../src/domain/notices.js';
-import { verifiedInput, at, ADMIN, RAY, MIKE, ERIN, W, GUS } from './fixtures.js';
+import { verifiedInput, at, ADMIN, RAY, MIKE, ERIN, W, GUS, U12_RED_COACH } from './fixtures.js';
 
-const recs = (s, noticeId, channel) => s.state.deliveries.filter((d) => d.messageId === noticeId && d.channel === channel);
+// Dispatched messages only: delivery reports (V2, CR-7) are status updates, not messages (SC-006).
+const recs = (s, noticeId, channel) => s.state.deliveries.filter((d) => d.messageId === noticeId && d.channel === channel && d.trigger !== 'delivery-report');
 const isParent = (s, id) => s.state.people[id].role === 'parent';
 
 function publishTimeMoveU12(s) {
   const res = publishChange(s, ADMIN, verifiedInput({
-    gameId: 'g-u12', changeType: 'time', newField: undefined, newKickoff: at('2026-11-22T13:00'),
+    gameId: 'g-u12', changeType: 'moved', newField: undefined, newKickoff: at('2026-11-22T13:00'),
     instruction: 'Arrive for the new kickoff at Sun 13:00.',
   }));
   if (!res.ok) throw new Error(res.error);
@@ -114,14 +115,14 @@ test('REQ-10 a jump of +5 at once still sends texts stamped with their own due t
 test('REQ-10 a time move away from a kickoff within 2 h is still urgent (original kickoff counts)', () => {
   const s = freshStore();
   const res = publishChange(s, ADMIN, verifiedInput({
-    gameId: 'g-u10', changeType: 'time', newField: undefined, newKickoff: at('2026-11-21T16:00'),
+    gameId: 'g-u10', changeType: 'moved', newField: undefined, newKickoff: at('2026-11-21T16:00'),
     instruction: 'Arrive for the new kickoff at Sat 16:00.',
   }));
   assertTrue(res.ok, res.error);
   assertEqual(s.state.notices[res.noticeId].urgent, true);
 });
 
-test('Clarifications: Erin confirms at +2, so neither Erin nor Wes (Family E) gets a text at +5', () => {
+test('REQ-10 (CR-8) Erin confirms at +2 (both children), so neither Erin nor Wes (Family E) gets a text at +5', () => {
   const s = freshStore();
   s.state.now = at('2026-11-21T06:00'); // 4 h before the U10 kickoff → not urgent
   const n = publishField7(s, { verification: { source: 'City', confirmedAt: at('2026-11-21T05:50') } });
@@ -139,7 +140,7 @@ test('REQ-04 / REQ-10 a second publish cancels the first notice’s pending esca
   const first = publishTimeMoveU12(s);
   advanceClock(s, 3);
   const second = publishChange(s, ADMIN, verifiedInput({
-    gameId: 'g-u12', changeType: 'field', newField: 'Field 9', instruction: 'Go to Field 9 at the new time.',
+    gameId: 'g-u12', changeType: 'moved', newField: 'Field 9', instruction: 'Go to Field 9 at the new time.',
   }));
   assertTrue(second.ok, second.error);
   advanceClock(s, 2); // first notice's +5 would fall here
@@ -152,7 +153,7 @@ test('REQ-04 / REQ-10 a second publish cancels the first notice’s pending esca
 test('REQ-10 a time move from tomorrow to within 2 h is urgent (sooner kickoff counts)', () => {
   const s = freshStore();
   const res = publishChange(s, ADMIN, verifiedInput({
-    gameId: 'g-u12', changeType: 'time', newField: undefined, newKickoff: at('2026-11-21T10:00'),
+    gameId: 'g-u12', changeType: 'moved', newField: undefined, newKickoff: at('2026-11-21T10:00'),
     instruction: 'Arrive for the new kickoff at Sat 10:00.',
   }));
   assertTrue(res.ok, res.error);
@@ -179,4 +180,85 @@ test('REQ-10 a coach who confirms is not texted; the other coach is', () => {
   const texts = recs(s, n.id, 'text');
   assertTrue(!texts.some((d) => d.personId === RAY), 'Ray confirmed');
   assertTrue(texts.some((d) => d.personId === 'coach-u10-red'), 'U10 Red coach texted');
+});
+
+// ---- V2: REQ-13 simulated delivery "sent" → "delivered" (CR-7, research R-14) ----
+
+import { noticeStatus } from '../src/domain/confirmations.js';
+import { REPORT_DELAY } from '../src/domain/delivery.js';
+
+test('REQ-13 (CR-7) at publish in-app and email are "sent"; after +1 min a "delivered" report follows', () => {
+  const s = freshStore();
+  const n = publishField7(s);
+  const rowAt = () => noticeStatus(s, n.id, RAY).rows.find((r) => r.personId === MIKE).channels;
+  assertEqual(rowAt()['in-app'], 'sent');
+  assertEqual(rowAt().email, 'sent');
+  const originals = s.state.deliveries.filter((d) => d.messageId === n.id && d.personId === MIKE).map((d) => ({ ...d }));
+  advanceClock(s, 1);
+  assertEqual(rowAt()['in-app'], 'delivered');
+  assertEqual(rowAt().email, 'delivered');
+  const reports = s.state.deliveries.filter((d) => d.messageId === n.id && d.personId === MIKE && d.trigger === 'delivery-report');
+  assertEqual(reports.length, 3, 'in-app, email and urgent text each get one report');
+  assertTrue(reports.every((d) => d.status === 'delivered' && d.at === n.publishedAt + REPORT_DELAY && Object.isFrozen(d)));
+  assertTrue(reports.every((d) => originals.some((o) => o.id === d.reportFor)), 'each report points to its sent record');
+  for (const o of originals) {
+    const now = s.state.deliveries.find((d) => d.id === o.id);
+    assertEqual(now.status, o.status, 'original record unchanged (REQ-06 append-only)');
+  }
+});
+
+test('REQ-13 (CR-7) a missing contact fails at once and never gets a delivery report', () => {
+  const s = freshStore();
+  const n = publishField7(s);
+  advanceClock(s, 10);
+  const fay = s.state.deliveries.filter((d) => d.messageId === n.id && d.personId === FAY && d.channel === 'email');
+  assertEqual(fay.length, 1, 'only the failed record');
+  assertEqual(fay[0].status, 'failed');
+  assertEqual(noticeStatus(s, n.id, RAY).rows.find((r) => r.personId === FAY).channels.email, 'failed');
+});
+
+test('SC-006 / REQ-17 (CR-7) after reports, each recipient still has exactly one dispatched record per channel', () => {
+  const s = freshStore();
+  const n = publishField7(s);
+  advanceClock(s, 5);
+  for (const r of n.recipients) {
+    for (const ch of ['in-app', 'email', 'text']) {
+      const sent = s.state.deliveries.filter((d) => d.messageId === n.id && d.personId === r.personId && d.channel === ch && d.trigger !== 'delivery-report');
+      assertEqual(sent.length, 1, `${ch} for ${r.personId}`);
+    }
+  }
+});
+
+test('REQ-13 (CR-7) a text sent during a +7 jump gets its report in the same jump', () => {
+  const s = freshStore();
+  const n = publishTimeMoveU12(s);
+  advanceClock(s, 7);
+  const text = recs(s, n.id, 'text')[0];
+  assertTrue(s.state.deliveries.some((d) => d.reportFor === text.id && d.at === text.at + REPORT_DELAY));
+});
+
+// ---- V2: US6 #6 two unrestricted parents (CR-8 regression), US6 #9 coaches are texted (CR-9) ----
+
+test('REQ-10 / REQ-13 (US6 #6) Olga confirms a non-urgent change at +2 min: no text to Olga or Omar at +5; Family O confirmed', () => {
+  const s = freshStore();
+  const n = publishTimeMoveU12(s);
+  assertEqual(n.urgent, false);
+  assertTrue(n.recipients.some((r) => r.personId === 'omar-ortiz') && n.recipients.some((r) => r.personId === 'olga-ortiz'));
+  advanceClock(s, 2);
+  confirmReceipt(s, 'olga-ortiz', n.id);
+  advanceClock(s, 3);
+  const texts = recs(s, n.id, 'text');
+  assertTrue(!texts.some((d) => d.personId === 'olga-ortiz' || d.personId === 'omar-ortiz'), 'no text to Family O');
+  assertTrue(texts.some((d) => d.personId === 'pat-park'), 'other families still texted');
+  assertTrue(!noticeStatus(s, n.id, U12_RED_COACH).notConfirmed.some((f) => f.label === 'Family O'));
+});
+
+test('REQ-10 / REQ-11 (CR-9, US6 #9) non-urgent: both coaches unconfirmed get the 5-minute text and never a call', () => {
+  const s = freshStore();
+  const n = publishTimeMoveU12(s);
+  advanceClock(s, 30);
+  for (const coach of [U12_RED_COACH, 'coach-u12-gold']) {
+    assertEqual(recs(s, n.id, 'text').filter((d) => d.personId === coach).length, 1, `text to ${coach}`);
+    assertEqual(recs(s, n.id, 'call').filter((d) => d.personId === coach).length, 0, `no call to ${coach}`);
+  }
 });

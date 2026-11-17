@@ -30,7 +30,7 @@ export const at = (s) => parseTime(s);
 export function verifiedInput(overrides = {}) {
   return {
     gameId: 'g-u10',
-    changeType: 'field',
+    changeType: 'moved',
     newField: 'Field 7',
     instruction: 'Go to Field 7 at the original time.',
     verification: { source: 'Parks Department', confirmedAt: at('2026-11-21T08:20') },
@@ -42,4 +42,9 @@ export function publishField7(store, overrides = {}) {
   const res = publishChange(store, ADMIN, verifiedInput(overrides));
   if (!res.ok) throw new Error(`fixture publish failed: ${res.error}`);
   return store.state.notices[res.noticeId];
+}
+
+// V2: a verified cancellation of the U10 game (REQ-03, CR-2).
+export function canceledInput(overrides = {}) {
+  return verifiedInput({ changeType: 'cancelled', newField: undefined, instruction: 'No game today; do not travel.', ...overrides });
 }

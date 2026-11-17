@@ -36,7 +36,8 @@ const FAMILIES = [
   family('fam-l', 'Family L', [['lee-lopez', 'Lee Lopez']], [['lia-lopez', 'Lia', 'Lopez', 'u10-red']]),
   family('fam-n', 'Family N', [['nia-nash', 'Nia Nash']], [['noa-nash', 'Noa', 'Nash', 'u10-red']]),
   // U12 Red — 4 families including Mike's (Mia, above)
-  family('fam-o', 'Family O', [['omar-ortiz', 'Omar Ortiz']], [['oli-ortiz', 'Oli', 'Ortiz', 'u12-red']]),
+  // V2 (research R-9): two unrestricted parents, so US6 #6 / CR-8 regression can be shown in the UI.
+  family('fam-o', 'Family O', [['omar-ortiz', 'Omar Ortiz'], ['olga-ortiz', 'Olga Ortiz']], [['oli-ortiz', 'Oli', 'Ortiz', 'u12-red']]),
   family('fam-p', 'Family P', [['pat-park', 'Pat Park']], [['pia-park', 'Pia', 'Park', 'u12-red']]),
   family('fam-q', 'Family Q', [['quinn-ross', 'Quinn Ross']], [['remy-ross', 'Remy', 'Ross', 'u12-red']]),
   // U12 Gold — 3 families

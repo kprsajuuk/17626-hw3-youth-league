@@ -1,31 +1,39 @@
-// Official change notices. REQ-01 (verification required), REQ-02 (admin only), REQ-03 (cancel /
-// field / time with old → new and instruction), REQ-04 (FINAL, author, time, replaces earlier),
+// Official change notices. REQ-01 (verification required), REQ-02 (admin only), REQ-03 (cancelled,
+// or moved: field, time or both, with old → new and instruction; a cancellation is final — V2
+// CR-2, CR-5), REQ-04 (FINAL, author, time, replaces earlier),
 // REQ-06 (every attempt logged), REQ-05 (coach heads-up, always UNCONFIRMED, never official,
-// superseded by the FINAL notice — CF-1 compromise).
+// superseded by the FINAL notice — CF-1 compromise; V2 CR-1: only while no FINAL notice exists, D-6).
 
-import { nextId, notify, currentDetails, gameStarted, gameName, teamOfCoach } from './store.js';
+import { nextId, notify, currentDetails, gameStarted, isCancelled, gameName, teamOfCoach } from './store.js';
 import { appendActivity } from './log.js';
 import { dispatchFinalNotice, dispatchHeadsUp, cancelEscalations } from './delivery.js';
 import { formatTime } from '../ui/format.js';
 
-export const CHANGE_TYPES = ['cancelled', 'field', 'time'];
+export const CHANGE_TYPES = ['cancelled', 'moved']; // REQ-03 (V2, CR-5: one 'moved' for field, time or both)
 export const VERIFICATION_SOURCES = ['City', 'Parks Department'];
 export const URGENT_WINDOW = 2 * 60 * 60 * 1000; // REQ-10 (OQ-1): urgent = kickoff within 2 hours
 
 const toTime = (v) => (v === undefined || v === null || v === '' ? null : typeof v === 'number' ? v : new Date(v).getTime());
 
-// REQ-03, REQ-04: wording from contracts/domain-api.md "Wording rules".
+const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+const hhmm = (ts) => formatTime(ts).split(' ')[1];
+
+// REQ-03, REQ-04: wording from contracts/domain-api.md "Wording rules" (research R-10).
+// A move names only what changed: field only, time only, or both (V2, CR-5).
 export function noticeLabel(notice) {
-  switch (notice.changeType) {
-    case 'cancelled':
-      return 'FINAL – Cancelled';
-    case 'field':
-      return `FINAL – Moved: ${notice.old.field} → ${notice.new.field}`;
-    case 'time':
-      return `FINAL – Time changed: ${formatTime(notice.old.kickoff)} → ${formatTime(notice.new.kickoff)}`;
-    default:
-      return 'FINAL';
+  if (notice.changeType === 'cancelled') return 'FINAL – Cancelled';
+  if (notice.changeType !== 'moved') return 'FINAL';
+  const { old } = notice;
+  const neu = notice.new;
+  const fieldMoved = neu.field !== undefined;
+  const timeMoved = neu.kickoff !== undefined;
+  if (fieldMoved && timeMoved) {
+    const showDay = !sameDay(old.kickoff, neu.kickoff);
+    const t = (ts) => (showDay ? formatTime(ts) : hhmm(ts));
+    return `FINAL – Moved: ${old.field}, ${t(old.kickoff)} → ${neu.field}, ${t(neu.kickoff)}`;
   }
+  if (fieldMoved) return `FINAL – Moved: ${old.field} → ${neu.field}`;
+  return `FINAL – Time changed: ${formatTime(old.kickoff)} → ${formatTime(neu.kickoff)}`;
 }
 
 // REQ-01, REQ-02, REQ-03, REQ-04, REQ-06
@@ -48,7 +56,8 @@ export function publishChange(store, actorId, input = {}) {
 
   if (!game) return reject('invalid-change');
   if (!actor || actor.role !== 'admin') return reject('not-authorized'); // REQ-02
-  if (gameStarted(store, game)) return reject('game-started');
+  if (gameStarted(store, game)) return reject('game-started'); // REQ-20
+  if (isCancelled(store, game)) return reject('game-cancelled'); // REQ-03, D-7 (V2, CR-2)
 
   // REQ-01: verification record (source + time) is mandatory; no fixed decision time assumed.
   const v = input.verification || {};
@@ -58,31 +67,29 @@ export function publishChange(store, actorId, input = {}) {
   }
   if (confirmedAt > nowTs) return reject('verification-in-future');
 
-  // REQ-03: one of cancelled / field / time, and it must actually change something.
+  // REQ-03 (V2, CR-4, CR-5): cancelled, or moved — a new field, a new kickoff, or both. A move
+  // must change at least one detail, and a new kickoff must be in the future. `new` holds only
+  // the details that change; an omitted or unchanged value means "keep the current one".
   const current = currentDetails(store, game);
   const old = { kickoff: current.kickoff, field: current.field };
   let neu;
-  switch (input.changeType) {
-    case 'cancelled':
-      if (current.cancelled) return reject('invalid-change');
-      neu = {};
-      break;
-    case 'field': {
-      const field = (input.newField || '').trim();
-      if (!field || field === old.field) return reject('invalid-change');
-      neu = { field };
-      break;
-    }
-    case 'time': {
-      const kickoff = toTime(input.newKickoff);
-      if (kickoff === null || Number.isNaN(kickoff) || kickoff === old.kickoff || kickoff <= nowTs) {
-        return reject('invalid-change');
+  if (input.changeType === 'cancelled') {
+    neu = {};
+  } else if (input.changeType === 'moved') {
+    neu = {};
+    const field = (input.newField || '').trim();
+    if (field && field !== old.field) neu.field = field;
+    const kickoff = toTime(input.newKickoff);
+    if (kickoff !== null) {
+      if (Number.isNaN(kickoff)) return reject('invalid-change');
+      if (kickoff !== old.kickoff) {
+        if (kickoff <= nowTs) return reject('invalid-change');
+        neu.kickoff = kickoff;
       }
-      neu = { kickoff };
-      break;
     }
-    default:
-      return reject('invalid-change');
+    if (neu.field === undefined && neu.kickoff === undefined) return reject('invalid-change');
+  } else {
+    return reject('invalid-change');
   }
 
   const instruction = (input.instruction || '').trim();
@@ -137,16 +144,17 @@ export function publishChange(store, actorId, input = {}) {
   return { ok: true, noticeId: notice.id };
 }
 
-// REQ-03, REQ-04: what a game entry shows.
+// REQ-03, REQ-04, REQ-20: what a game entry shows.
 export function gameStatus(store, gameId) {
   const { games, notices, people } = store.state;
   const game = games[gameId];
   const current = currentDetails(store, game);
   const notice = game.currentNoticeId ? notices[game.currentNoticeId] : null;
+  const started = gameStarted(store, game); // REQ-20 (V2, CR-6): derived, never stored
   const base = { gameId, title: gameName(store, game), current, headsUps: headsUpsFor(store, gameId) };
   if (!notice) {
     return { ...base, kind: 'scheduled', label: 'As scheduled', changeType: null, old: null, new: null,
-      instruction: null, author: null, publishedAt: null, verification: null, noticeId: null };
+      instruction: null, author: null, publishedAt: null, verification: null, noticeId: null, started };
   }
   return {
     ...base,
@@ -160,6 +168,7 @@ export function gameStatus(store, gameId) {
     publishedAt: notice.publishedAt,
     verification: notice.verification,
     noticeId: notice.id,
+    started,
   };
 }
 
@@ -205,7 +214,9 @@ export function sendHeadsUp(store, actorId, input = {}) {
   };
 
   if (!game || !team || !game.teamIds.includes(team.id)) return reject('not-authorized');
-  if (gameStarted(store, game)) return reject('game-started');
+  if (gameStarted(store, game)) return reject('game-started'); // REQ-20
+  // REQ-05, D-6 (V2, CR-1): a change is pending only until a FINAL notice is published.
+  if (game.currentNoticeId) return reject('official-decision-published');
   const message = (input.message || '').trim();
   if (!message) return reject('message-required');
 

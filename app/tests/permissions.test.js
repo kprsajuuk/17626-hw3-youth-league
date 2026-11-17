@@ -73,3 +73,31 @@ test('REQ-19 permissions follow the active persona: a parent persona is rejected
   assertEqual(can(s, MIKE, 'publish', 'g-u10'), false);
   assertEqual(can(s, ADMIN, 'publish', 'g-u10'), true);
 });
+
+// ---- V2: REQ-03 (CR-2), REQ-05 (CR-1), REQ-20 (CR-6) ----
+
+import { publishChange } from '../src/domain/notices.js';
+import { canceledInput } from './fixtures.js';
+
+test('REQ-03 (CR-2) nobody can publish for a cancelled game', () => {
+  const s = freshStore();
+  publishChange(s, ADMIN, canceledInput());
+  assertEqual(can(s, ADMIN, 'publish', 'g-u10'), false);
+  assertEqual(can(s, ADMIN, 'publish', 'g-u12'), true, 'other games unaffected');
+});
+
+test('REQ-05 (CR-1) no heads-up once a FINAL notice exists (moved or cancelled)', () => {
+  const s = freshStore();
+  publishField7(s);
+  assertEqual(can(s, RAY, 'heads-up', 'g-u10'), false);
+  const s2 = freshStore();
+  publishChange(s2, ADMIN, canceledInput());
+  assertEqual(can(s2, RAY, 'heads-up', 'g-u10'), false);
+});
+
+test('REQ-20 (CR-6) after kickoff neither publish nor heads-up is allowed', () => {
+  const s = freshStore();
+  advanceClock(s, 90); // 10:00, U10 kickoff
+  assertEqual(can(s, ADMIN, 'publish', 'g-u10'), false);
+  assertEqual(can(s, RAY, 'heads-up', 'g-u10'), false);
+});

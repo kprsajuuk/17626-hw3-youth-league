@@ -59,7 +59,7 @@ test('REQ-03 field move label "FINAL – Moved: Field 3 → Field 7" with author
 test('REQ-03 time move label "FINAL – Time changed: Sun 10:00 → Sun 13:00"', () => {
   const s = freshStore();
   const res = publishChange(s, ADMIN, verifiedInput({
-    gameId: 'g-u12', changeType: 'time', newField: undefined, newKickoff: at('2026-11-22T13:00'),
+    gameId: 'g-u12', changeType: 'moved', newField: undefined, newKickoff: at('2026-11-22T13:00'),
     instruction: 'Arrive for the new kickoff at Sun 13:00.',
   }));
   assertTrue(res.ok, res.error);
@@ -77,8 +77,8 @@ test('REQ-03 unchanged or missing new field/time is rejected (invalid-change)', 
   const s = freshStore();
   rejects(s, ADMIN, verifiedInput({ newField: 'Field 3' }), 'invalid-change');
   rejects(s, ADMIN, verifiedInput({ newField: '' }), 'invalid-change');
-  rejects(s, ADMIN, verifiedInput({ changeType: 'time', newField: undefined }), 'invalid-change');
-  rejects(s, ADMIN, verifiedInput({ changeType: 'time', newField: undefined, newKickoff: at('2026-11-21T08:00') }), 'invalid-change');
+  rejects(s, ADMIN, verifiedInput({ changeType: 'moved', newField: undefined }), 'invalid-change');
+  rejects(s, ADMIN, verifiedInput({ changeType: 'moved', newField: undefined, newKickoff: at('2026-11-21T08:00') }), 'invalid-change');
 });
 
 test('REQ-03 empty instruction is rejected (instruction-required)', () => {
@@ -179,4 +179,68 @@ test('REQ-04 / REQ-05 / REQ-17 publishing FINAL supersedes the heads-up; parents
   const hu = alertsFor(s, MIKE).find((a) => a.kind === 'heads-up');
   assertTrue(hu.superseded && !hu.unconfirmed, 'heads-up superseded and never needs confirmation');
   assertTrue(hu.content.includes('Field 3') && !hu.content.includes('Field 7'), 'heads-up text stays as sent');
+});
+
+// ---- V2: REQ-03 combined move and validation (CR-4, CR-5), a cancellation is final (CR-2),
+// REQ-05 heads-up only while the change is pending (CR-1, D-6) ----
+
+import { canceledInput } from './fixtures.js';
+
+test('REQ-03 (CR-5) one move changes field and time: "FINAL – Moved: Field 3, 10:00 → Field 7, 13:00"', () => {
+  const s = freshStore();
+  const res = publishChange(s, ADMIN, verifiedInput({ newKickoff: at('2026-11-21T13:00'), instruction: 'Go to Field 7 for 13:00.' }));
+  assertTrue(res.ok, res.error);
+  const n = s.state.notices[res.noticeId];
+  assertEqual(gameStatus(s, 'g-u10').label, 'FINAL – Moved: Field 3, 10:00 → Field 7, 13:00');
+  assertEqual(gameStatus(s, 'g-u10').current.field, 'Field 7');
+  assertEqual(gameStatus(s, 'g-u10').current.kickoff, at('2026-11-21T13:00'));
+  for (const r of n.recipients) {
+    for (const ch of ['in-app', 'email']) {
+      const sent = s.state.deliveries.filter((d) => d.messageId === n.id && d.personId === r.personId && d.channel === ch && d.trigger === 'publish');
+      assertEqual(sent.length, 1, `one ${ch} notice for ${r.personId}`);
+    }
+  }
+  assertEqual(Object.keys(s.state.notices).length, 1, 'one notice, not two');
+});
+
+test('REQ-03 (CR-5) a combined move to another day shows the weekday on both sides', () => {
+  const s = freshStore();
+  const res = publishChange(s, ADMIN, verifiedInput({ gameId: 'g-u12', newField: 'Field 9', newKickoff: at('2026-11-23T18:00') }));
+  assertTrue(res.ok, res.error);
+  assertEqual(gameStatus(s, 'g-u12').label, 'FINAL – Moved: Field 5, Sun 10:00 → Field 9, Mon 18:00');
+});
+
+test('REQ-03 (CR-4) a move that keeps both the current field and kickoff is rejected', () => {
+  rejects(freshStore(), ADMIN, verifiedInput({ newField: 'Field 3', newKickoff: at('2026-11-21T10:00') }), 'invalid-change');
+});
+
+test('REQ-03 (CR-2) cancel, then any change is rejected with game-cancelled; status stays Cancelled', () => {
+  const s = freshStore();
+  assertTrue(publishChange(s, ADMIN, canceledInput()).ok);
+  for (const input of [verifiedInput(), canceledInput()]) {
+    const before = s.state.deliveries.length;
+    const res = publishChange(s, ADMIN, input);
+    assertEqual(res.error, 'game-cancelled');
+    assertEqual(s.state.deliveries.length, before, 'nothing sent');
+  }
+  assertEqual(gameStatus(s, 'g-u10').label, 'FINAL – Cancelled');
+  assertEqual(s.state.activity.filter((e) => e.type === 'publish-rejected').length, 2, 'both attempts logged');
+});
+
+test('REQ-03 (CR-2) a move, then a cancellation, is still allowed (walkthrough H)', () => {
+  const s = freshStore();
+  publishField7(s);
+  assertTrue(publishChange(s, ADMIN, canceledInput()).ok);
+  assertEqual(gameStatus(s, 'g-u10').label, 'FINAL – Cancelled');
+});
+
+test('REQ-05 (CR-1) once a FINAL notice exists, a heads-up is rejected and logged; nothing is sent', () => {
+  const s = freshStore();
+  publishField7(s);
+  const before = s.state.deliveries.length;
+  const res = sendHeadsUp(s, RAY, RAIN);
+  assertEqual(res.error, 'official-decision-published');
+  assertEqual(s.state.deliveries.length, before, 'no delivery');
+  assertEqual(Object.keys(s.state.headsUps).length, 0, 'no heads-up stored');
+  assertEqual(s.state.activity.at(-1).type, 'heads-up-rejected');
 });

@@ -1,6 +1,8 @@
 // Administrator view (Brenda). REQ-01 (verification record before publishing), REQ-02 (only the
 // admin sees the publish form), REQ-03 / REQ-04 (FINAL status with old → new, instruction, author,
-// time), REQ-06 (activity log), REQ-13 (notice status), Constitution VI (visible delivery log).
+// time; V2: Cancelled / Moved with field, time or both, CR-5; a cancellation is final, CR-2),
+// REQ-06 (activity log), REQ-13 (notice status), REQ-20 (started games: no publish form),
+// Constitution VI (visible delivery log).
 
 import { el, gameCard, gameDetail, noticeStatusTable, deliveryLogTable, table } from './components.js';
 import { formatTime, toDateTimeLocal, timeOnDay } from './format.js';
@@ -8,12 +10,13 @@ import { can } from '../domain/permissions.js';
 import { publishChange, gameStatus, whereWhen, VERIFICATION_SOURCES } from '../domain/notices.js';
 import { noticeStatus } from '../domain/confirmations.js';
 import { activityLog, deliveryLog } from '../domain/queries.js';
-import { currentDetails } from '../domain/store.js';
+import { currentDetails, gameStarted, isCancelled } from '../domain/store.js';
 
 const ERROR_TEXT = {
   'verification-required': 'A verification record (source and time) is required before publishing.',
   'verification-in-future': 'The verification time cannot be later than the current time.',
-  'invalid-change': 'The change must differ from the game’s current details, and a new time must be in the future.',
+  'invalid-change': 'A move must change the field, the kickoff time or both, and a new kickoff must be in the future.',
+  'game-cancelled': 'This game is cancelled. A cancellation is final.',
   'instruction-required': 'Tell families what to do before publishing.',
   'game-started': 'This game has already started, so it can no longer be changed.',
   'not-authorized': 'Only the league administrator can publish an official status.',
@@ -30,15 +33,29 @@ export function resetUi() {
 }
 
 function freshDraft() {
-  return { changeType: 'field', newField: '', newKickoff: '', instruction: '', instructionEdited: false, source: '', confirmedAt: '' };
+  // newField / newKickoff null = not yet pre-filled with the game's current details.
+  return { changeType: 'moved', newField: null, newKickoff: null, instruction: '', instructionEdited: false, source: '', confirmedAt: '' };
 }
 
-// Suggested instruction per change type; Brenda can edit it (spec Assumptions).
-function suggestedInstruction(store, d) {
+// Suggested instruction per change; Brenda can edit it (spec Assumptions). V2 (CR-5): a move may
+// change the field, the time or both.
+function suggestedInstruction(d, current) {
   if (d.changeType === 'cancelled') return 'No game today; do not travel.';
-  if (d.changeType === 'field') return `Go to ${d.newField.trim() || 'the new field'} at the original time.`;
-  const t = d.newKickoff ? formatTime(new Date(d.newKickoff).getTime()) : 'the new time';
-  return `Arrive for the new kickoff at ${t}.`;
+  const field = (d.newField || '').trim();
+  const kickoff = d.newKickoff ? new Date(d.newKickoff).getTime() : null;
+  const fieldMoved = !!field && field !== current.field;
+  const timeMoved = kickoff !== null && !Number.isNaN(kickoff) && kickoff !== current.kickoff;
+  if (fieldMoved && timeMoved) return `Go to ${field} for the new kickoff at ${formatTime(kickoff)}.`;
+  if (fieldMoved) return `Go to ${field} at the original time.`;
+  if (timeMoved) return `Arrive for the new kickoff at ${formatTime(kickoff)}.`;
+  return 'Change the field, the kickoff time or both.';
+}
+
+// REQ-03, REQ-20: why a game offers no publish form.
+function noPublishNote(store, game) {
+  if (gameStarted(store, game)) return 'This game has already started.';
+  if (isCancelled(store, game)) return ERROR_TEXT['game-cancelled'];
+  return 'Only the league administrator can publish an official status.';
 }
 
 export function render(store, personaId, root) {
@@ -101,15 +118,17 @@ function selectedGame(store, personaId, game, rerender) {
     gameDetail(store, game.id),
     can(store, personaId, 'publish', game.id)
       ? publishForm(store, personaId, game, rerender)
-      : el('p', { class: 'muted' }, 'Kickoff has passed — no changes can be published for this game.'),
+      : el('p', { class: 'muted' }, noPublishNote(store, game)),
     st.noticeId ? el('div', {}, el('h3', {}, 'Notice status'), noticeStatusTable(noticeStatus(store, st.noticeId, personaId))) : null);
 }
 
 // REQ-01, REQ-02, REQ-03
 function publishForm(store, personaId, game, rerender) {
   const d = ui.draft || (ui.draft = freshDraft());
-  if (!d.instructionEdited) d.instruction = suggestedInstruction(store, d);
   const current = currentDetails(store, game);
+  if (d.newField === null) d.newField = current.field;
+  if (d.newKickoff === null) d.newKickoff = toDateTimeLocal(current.kickoff);
+  if (!d.instructionEdited) d.instruction = suggestedInstruction(d, current);
 
   // Text/time edits update the draft in place (no re-render), so a click on Publish right after
   // typing is not lost to a re-rendered button. Only the change-type radio re-renders the form.
@@ -118,7 +137,7 @@ function publishForm(store, personaId, game, rerender) {
     d[key] = e.target.value;
     if (key === 'instruction') d.instructionEdited = true;
     if (!d.instructionEdited && instructionBox) {
-      d.instruction = suggestedInstruction(store, d);
+      d.instruction = suggestedInstruction(d, current);
       instructionBox.value = d.instruction;
     }
     if (redraw) rerender();
@@ -150,15 +169,13 @@ function publishForm(store, personaId, game, rerender) {
     el('legend', {}, 'Publish an official change (FINAL)'),
     el('div', { class: 'row' },
       typeOption('cancelled', 'Cancelled'),
-      typeOption('field', 'Moved to another field'),
-      typeOption('time', 'Moved to another time')),
-    d.changeType === 'field'
-      ? el('div', { class: 'field' }, el('label', { for: 'newField' }, `New field (now ${current.field})`),
-        el('input', { id: 'newField', value: d.newField, placeholder: 'e.g. Field 7', oninput: update('newField') }))
-      : null,
-    d.changeType === 'time'
-      ? el('div', { class: 'field' }, el('label', { for: 'newKickoff' }, `New kickoff (now ${formatTime(current.kickoff)})`),
-        el('input', { id: 'newKickoff', type: 'datetime-local', value: d.newKickoff, min: toDateTimeLocal(store.state.now), oninput: update('newKickoff'), onchange: update('newKickoff') }))
+      typeOption('moved', 'Moved (field, time or both)')),
+    d.changeType === 'moved'
+      ? el('div', { class: 'row' },
+        el('div', { class: 'field' }, el('label', { for: 'newField' }, `Field (now ${current.field})`),
+          el('input', { id: 'newField', value: d.newField, placeholder: 'e.g. Field 7', oninput: update('newField') })),
+        el('div', { class: 'field' }, el('label', { for: 'newKickoff' }, `Kickoff (now ${formatTime(current.kickoff)})`),
+          el('input', { id: 'newKickoff', type: 'datetime-local', value: d.newKickoff, min: toDateTimeLocal(store.state.now), oninput: update('newKickoff'), onchange: update('newKickoff') })))
       : null,
     el('div', { class: 'field' }, el('label', { for: 'instruction' }, 'What families should do'),
       instructionBox = el('textarea', { id: 'instruction', oninput: update('instruction') }, d.instruction)),

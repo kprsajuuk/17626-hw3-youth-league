@@ -74,7 +74,7 @@ test('REQ-08 restricted parent X sees no game and no message about Bea', () => {
   publishField7(s);
   const t = renderText(parentView, s, X);
   assertTrue(!t.includes('Bea'), 'Bea never shown to X');
-  assertTrue(t.includes('No upcoming games.'), 'no games for X');
+  assertTrue(t.includes('No games today or later.'), 'no games for X');
 });
 
 test('REQ-18 parent view shows child names as first name + initial only', () => {
@@ -83,4 +83,47 @@ test('REQ-18 parent view shows child names as first name + initial only', () => 
   const t = renderText(parentView, s, MIKE);
   assertTrue(t.includes('Max M.') && t.includes('Mia M.'), 'both children shown');
   assertTrue(!t.includes('Max Moreno') && !t.includes('Mia Moreno'), 'no child full names');
+});
+
+// ---- V2: REQ-20 "Started" shown in every view (CR-6), REQ-03 / REQ-05 notes (CR-1, CR-2) ----
+
+import { advanceClock } from '../src/domain/clock.js';
+import { publishChange } from '../src/domain/notices.js';
+import { verifiedInput, at, canceledInput } from './fixtures.js';
+
+test('REQ-20 (CR-6, US1 #13, US5 #4) admin, coach and parent views show "Started"; Mike’s alert needs no confirmation', () => {
+  const s = freshStore();
+  publishChange(s, ADMIN, verifiedInput({ newField: undefined, newKickoff: at('2026-11-21T08:40'), instruction: 'Arrive for 08:40.' }));
+  advanceClock(s, 10);
+  adminView.resetUi(); coachView.resetUi();
+  for (const [view, id] of [[adminView, ADMIN], [coachView, RAY], [parentView, MIKE]]) {
+    assertTrue(renderText(view, s, id).includes('Started'), `Started tag for ${id}`);
+  }
+  const mike = renderText(parentView, s, MIKE);
+  assertTrue(mike.includes('Needs your confirmation (0)'), 'nothing to confirm');
+  assertTrue(mike.includes('Game started – no confirmation needed'));
+});
+
+test('REQ-03 / REQ-05 (CR-1, CR-2) views explain why publish or heads-up is not offered', () => {
+  const s = freshStore();
+  publishChange(s, ADMIN, canceledInput());
+  const root = document.createElement('div');
+  adminView.resetUi();
+  adminView.render(s, ADMIN, root);
+  // Open the U10 game through its "Open" button (the first card whose title is the U10 game).
+  // Standard DOM only (tagName, childNodes, click), so this runs on the browser test page.
+  const find = (n, pred) => (pred(n) ? n : [...(n.childNodes || [])].map((c) => find(c, pred)).find(Boolean));
+  const openBtn = (r, title) => {
+    const card = find(r, (n) => typeof n.className === 'string' && n.className.startsWith('card') && n.textContent.startsWith(title));
+    return find(card, (n) => n.tagName === 'BUTTON' && n.textContent === 'Open');
+  };
+  openBtn(root, 'U10 Blue vs U10 Red').click();
+  assertTrue(root.textContent.includes('This game is cancelled. A cancellation is final.'));
+  assertTrue(!root.textContent.includes('Publish FINAL notice'), 'no publish control');
+  const croot = document.createElement('div');
+  coachView.resetUi();
+  coachView.render(s, RAY, croot);
+  openBtn(croot, 'U10 Blue vs U10 Red').click();
+  assertTrue(croot.textContent.includes('An official decision has already been published.'));
+  assertTrue(!croot.textContent.includes('Send UNCONFIRMED heads-up'), 'no heads-up control');
 });

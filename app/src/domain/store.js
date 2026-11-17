@@ -2,7 +2,7 @@
 // in-memory only). Also holds small lookup helpers shared by the domain modules.
 
 import { seed, DEMO_START } from '../data/seed.js';
-import { processDueEscalations } from './delivery.js';
+import { processDueEscalations, processDeliveryReports } from './delivery.js';
 
 export function parseTime(value) {
   if (typeof value === 'number') return value;
@@ -25,7 +25,9 @@ function load(store) {
 
 export function createStore() {
   // REQ-10 / REQ-11: pending escalations are checked every time the demo clock moves.
-  const store = { listeners: new Set(), tickHandlers: [processDueEscalations], counter: 0, state: null };
+  // REQ-13 (V2, CR-7): delivery reports run after escalations, so a text or call sent during a
+  // clock jump also gets its report in the same jump once its minute has passed.
+  const store = { listeners: new Set(), tickHandlers: [processDueEscalations, processDeliveryReports], counter: 0, state: null };
   load(store);
   return store;
 }
@@ -72,6 +74,12 @@ export function currentDetails(store, game) {
   };
 }
 
+// REQ-20 (V2, CR-6): a game has started once its current kickoff has passed. Derived, never stored.
 export function gameStarted(store, game) {
   return currentDetails(store, game).kickoff <= store.state.now;
+}
+
+// REQ-03, D-7 (V2, CR-2): the current official status is a cancellation, which is final.
+export function isCancelled(store, game) {
+  return currentDetails(store, game).cancelled;
 }

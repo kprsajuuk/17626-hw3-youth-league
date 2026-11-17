@@ -147,6 +147,7 @@ prominent for that parent.
    only X2 and contains no mention of B1.
 4. **[REQ-09]** **Given** a change is published, **When** the delivery log is viewed, **Then** each
    recipient has one in-app alert entry and one simulated email entry for that change.
+   *(V2)* Delivery reports (Assumptions, simulated delivery) are not counted as entries here.
 5. **[REQ-12]** **Given** a parent has an unacknowledged FINAL notice, **When** the parent opens
    their view, **Then** the alert is shown prominently at the top and remains there until the
    parent acknowledges it.
@@ -155,7 +156,7 @@ prominent for that parent.
    shows that family as confirmed.
 7. **[REQ-17]** **Given** Mike has two children on U10 Blue, **When** a U10 Blue change is
    published, **Then** Mike receives exactly one notice per channel for that change, and the notice
-   names both children.
+   names both children. *(V2)* A delivery report for that notice is not a second notice.
 
 ---
 
@@ -275,7 +276,7 @@ pass 5 minutes; check which texts and calls appear in the delivery log.
 
 1. **[REQ-10]** **Given** kickoff is 90 minutes away, **When** the change is published,
    **Then** the delivery log shows, at once, an in-app alert, email and text for each recipient
-   parent.
+   *(V2: parent or coach, CR-9)*.
 2. **[REQ-11]** **Given** kickoff is 90 minutes away and parent P has not confirmed receipt,
    **When** 2 minutes pass after publishing, **Then** the delivery log shows a phone call to
    parent P, and no call to any parent who confirmed receipt within those 2 minutes.
@@ -391,8 +392,8 @@ the interview evidence. `D-x` entries are domain properties from the goal model.
   YG:M73, YH:M23; V1 evaluation OBS-10, OBS-11. *Assumption*: the per-child rule (OQ-8) and texts to
   coaches (OQ-9) are team decisions.
 - **REQ-11**: For urgent changes, a simulated phone call MUST be placed to each recipient parent
-  who has not confirmed receipt within 2 minutes of publishing. Non-urgent changes MUST NOT trigger
-  a call. *Goals*: G-31, G-85. *Evidence*: YH:M23, YH:M67. *Assumption*: the 2-minute delay is a
+  who has not confirmed receipt within 2 minutes of publishing *(V2: "confirmed" per child, as in
+  REQ-10; no call once the game has started, REQ-20)*. Non-urgent changes MUST NOT trigger a call. *Goals*: G-31, G-85. *Evidence*: YH:M23, YH:M67. *Assumption*: the 2-minute delay is a
   team decision (Clarifications 2026-11-16), not stakeholder-stated.
 - **REQ-12**: A recipient MUST be able to confirm receipt of a notice. Until they do, the alert MUST
   stay prominently visible in their view *(V2)* unless the game has started (REQ-20). *Goals*:
@@ -471,9 +472,11 @@ the interview evidence. `D-x` entries are domain properties from the goal model.
 - **SC-004**: A coach identifies every family that has not confirmed receipt in under 30 seconds of
   opening the status view.
 - **SC-005**: 100% of initial alerts are timestamped within 1 minute of publish; 100% of urgent
-  changes show a text entry for every recipient parent at publish time and a call entry for every
-  recipient parent still unconfirmed 2 minutes later.
+  changes show a text entry for every recipient *(V2: parent or coach)* at publish time and a call
+  entry for every recipient parent still unconfirmed 2 minutes later.
 - **SC-006**: 0 duplicate notices per parent per change per channel in all test scenarios.
+  *(V2)* Counted on dispatched messages; delivery-report records (simulated delivery, CR-7) are
+  status updates, not notices.
 - **SC-007**: No acknowledgment text anywhere in the prototype claims a notice was "read" or "seen".
 
 ## Assumptions

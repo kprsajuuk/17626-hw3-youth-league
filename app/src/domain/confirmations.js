@@ -3,7 +3,11 @@
 // REQ-13: coach (own team) and administrator see per-recipient, per-channel status and the
 //         families who have not confirmed.
 // REQ-14: wording only claims "confirmed receipt".
-// Clarifications 2026-11-16: a family is confirmed once any notified parent confirms.
+// REQ-10, REQ-13, REQ-08 (V2, CR-8, research R-15): confirmation is counted per child. A child is
+// confirmed once a parent notified about that child confirms; a parent once every child named in
+// their notice is confirmed; a family once all its affected children are. `recipient.childIds`
+// never holds a child the parent is restricted for, so a restricted parent can never count for,
+// or be listed next to, that child. (Replaces the family rule of Clarifications 2026-11-16.)
 
 import { notify, teamOfCoach } from './store.js';
 import { can } from './permissions.js';
@@ -16,14 +20,28 @@ function hasConfirmation(store, noticeId, personId) {
   return store.state.confirmations.some((c) => c.noticeId === noticeId && c.personId === personId);
 }
 
-// REQ-12 + Clarifications: confirmed for this recipient's family (or the coach themself).
+// REQ-10, REQ-13 (CR-8): some parent notified about this child has confirmed.
+export function childConfirmed(store, notice, childId) {
+  return notice.recipients.some((r) => r.childIds.includes(childId) && hasConfirmation(store, notice.id, r.personId));
+}
+
+// REQ-12, REQ-10 (CR-8): a parent is confirmed once every child named in their notice is
+// confirmed (by them or another parent notified about that child); a coach by their own action.
 export function isConfirmedFor(store, notice, personId) {
   const recipient = notice.recipients.find((r) => r.personId === personId);
   if (!recipient) return false;
   if (!recipient.familyId) return hasConfirmation(store, notice.id, personId);
-  return notice.recipients
-    .filter((r) => r.familyId === recipient.familyId)
-    .some((r) => hasConfirmation(store, notice.id, r.personId));
+  return recipient.childIds.every((cid) => childConfirmed(store, notice, cid));
+}
+
+// The family's children named in this notice (optionally limited, e.g. to a coach's team).
+function familyChildIds(notice, familyId, inScope = () => true) {
+  return [...new Set(notice.recipients.filter((r) => r.familyId === familyId).flatMap((r) => r.childIds))].filter(inScope);
+}
+
+// REQ-13 (CR-8): a family is confirmed once all of its affected children are confirmed.
+export function familyConfirmed(store, notice, familyId, inScope = () => true) {
+  return familyChildIds(notice, familyId, inScope).every((cid) => childConfirmed(store, notice, cid));
 }
 
 // REQ-12
@@ -34,11 +52,11 @@ export function confirmReceipt(store, actorId, noticeId) {
   if (!hasConfirmation(store, noticeId, actorId)) {
     store.state.confirmations.push(Object.freeze({ noticeId, personId: actorId, at: store.state.now }));
   }
-  // REQ-10 / REQ-11 + Clarifications: stop pending texts and calls for the whole family
-  // (or just the coach).
-  const me = notice.recipients.find((r) => r.personId === actorId);
-  const family = me.familyId ? notice.recipients.filter((r) => r.familyId === me.familyId).map((r) => r.personId) : [actorId];
-  cancelEscalations(store, noticeId, family);
+  // REQ-10 / REQ-11 (CR-8): stop pending texts and calls for every recipient who is now
+  // confirmed — possibly other parents of the same children, never a parent with an
+  // unconfirmed child left.
+  const nowConfirmed = notice.recipients.filter((r) => isConfirmedFor(store, notice, r.personId)).map((r) => r.personId);
+  cancelEscalations(store, noticeId, nowConfirmed);
   notify(store);
   return { ok: true };
 }
@@ -55,36 +73,45 @@ export function noticeStatus(store, noticeId, viewerId) {
     ? r.childIds.some((cid) => scopeTeams.includes(children[cid].teamId))
     : scopeTeams.includes(r.teamId));
 
+  const childInScope = (cid) => scopeTeams.includes(children[cid].teamId);
+
   const rows = notice.recipients.filter(inScope).map((r) => {
     const channels = {};
     for (const ch of CHANNELS) {
+      // REQ-13 (CR-7): the latest record per channel ("sent", then the "delivered" report).
       const recs = deliveries.filter((d) => d.messageId === noticeId && d.personId === r.personId && d.channel === ch);
       channels[ch] = recs.length ? recs[recs.length - 1].status : '—';
     }
+    const childIds = r.childIds.filter(childInScope);
     return {
       personId: r.personId,
       person: people[r.personId].name,
       familyId: r.familyId,
       family: r.familyId ? families[r.familyId].label : 'Coach',
-      children: r.childIds
-        .filter((cid) => scopeTeams.includes(children[cid].teamId))
-        .map((cid) => childDisplayName(children[cid])),
+      childIds,
+      children: childIds.map((cid) => childDisplayName(children[cid])),
       channels,
       confirmedSelf: hasConfirmation(store, noticeId, r.personId),
-      familyConfirmed: isConfirmedFor(store, notice, r.personId),
+      confirmed: r.familyId
+        ? childIds.every((cid) => childConfirmed(store, notice, cid))
+        : hasConfirmation(store, noticeId, r.personId),
     };
   });
 
-  // Count families, not people (one family may have two notified parents).
+  // Count families, not people (one family may have two notified parents). CR-8: per child.
   const familyIds = [...new Set(rows.filter((r) => r.familyId).map((r) => r.familyId))];
   const notConfirmed = familyIds
-    .filter((fid) => !rows.some((r) => r.familyId === fid && r.familyConfirmed))
+    .filter((fid) => !familyConfirmed(store, notice, fid, childInScope))
     .map((fid) => ({
       familyId: fid,
       label: families[fid].label,
-      // REQ-08: each parent is listed only with their own eligible children, so a restricted
-      // parent never appears next to the child they are restricted for.
-      parents: rows.filter((r) => r.familyId === fid).map((r) => ({ name: r.person, children: r.children })),
+      // REQ-08, REQ-13 (CR-8): only the parents notified about an unconfirmed child, each with only
+      // those children — a restricted parent is never listed next to the restricted child.
+      parents: rows
+        .filter((r) => r.familyId === fid)
+        .map((r) => ({ name: r.person, childIds: r.childIds.filter((cid) => !childConfirmed(store, notice, cid)) }))
+        .filter((p) => p.childIds.length)
+        .map((p) => ({ name: p.name, children: p.childIds.map((cid) => childDisplayName(children[cid])) })),
     }));
   const confirmedCount = familyIds.length - notConfirmed.length;
 

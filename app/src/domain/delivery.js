@@ -5,7 +5,9 @@
 // REQ-05: heads-ups go in-app + email to the coach's own team only and never escalate.
 // REQ-10: text if no confirmation within 5 min, or at once when the change is urgent.
 // REQ-11: urgent changes also place a call to each parent still unconfirmed after 2 min
-//         (Clarifications 2026-11-16, OQ-2). Confirmation by any parent stops it for the family.
+//         (Clarifications 2026-11-16, OQ-2). V2 (CR-8): escalation stops per recipient once every
+//         child named in their notice is confirmed. V2 (CR-6, REQ-20): nothing is due at or after kickoff.
+// REQ-13 (V2, CR-7): dispatch records "sent"; one simulated minute later a "delivered" report.
 
 import { appendDelivery } from './log.js';
 import { resolveRecipients, childDisplayName } from './recipients.js';
@@ -19,8 +21,13 @@ export function renderNoticeContent(store, notice, recipient) {
   const { games, children, teams } = store.state;
   const game = games[notice.gameId];
   const lines = [`${noticeLabel(notice)}.`, `${gameName(store, game)}, originally ${formatTime(notice.old.kickoff)} at ${notice.old.field}.`];
-  if (notice.changeType === 'field') lines.push(`New field: ${notice.new.field} (time unchanged).`);
-  if (notice.changeType === 'time') lines.push(`New kickoff: ${formatTime(notice.new.kickoff)} (field unchanged).`);
+  if (notice.changeType === 'moved') {
+    // REQ-03 (V2, CR-5): one notice names every detail that changed.
+    const { field, kickoff } = notice.new;
+    if (field !== undefined && kickoff !== undefined) lines.push(`New field: ${field}. New kickoff: ${formatTime(kickoff)}.`);
+    else if (field !== undefined) lines.push(`New field: ${field} (time unchanged).`);
+    else lines.push(`New kickoff: ${formatTime(kickoff)} (field unchanged).`);
+  }
   if (notice.changeType === 'cancelled') lines.push('The game will not take place.');
   lines.push(`What to do: ${notice.instruction}`);
   if (recipient.childIds.length) {
@@ -31,10 +38,34 @@ export function renderNoticeContent(store, notice, recipient) {
   return lines.join(' ');
 }
 
+// REQ-13 (V2, CR-7): a channel with a contact on file is "sent"; a missing contact fails at once.
 function contactStatus(person, channel) {
-  if (channel === 'in-app') return { status: 'delivered', reason: null };
-  if (channel === 'email') return person.email ? { status: 'delivered', reason: null } : { status: 'failed', reason: 'No email on file' };
-  return person.phone ? { status: 'delivered', reason: null } : { status: 'failed', reason: 'No phone on file' };
+  if (channel === 'in-app') return { status: 'sent', reason: null };
+  if (channel === 'email') return person.email ? { status: 'sent', reason: null } : { status: 'failed', reason: 'No email on file' };
+  return person.phone ? { status: 'sent', reason: null } : { status: 'failed', reason: 'No phone on file' };
+}
+
+export const REPORT_DELAY = 60 * 1000; // REQ-13 (V2, CR-7): delivery report 1 simulated minute after "sent"
+
+// REQ-13, REQ-06 (V2, CR-7, research R-14): for every "sent" record without a report whose minute
+// has passed, append a "delivered" report. Pending reports are derived from the append-only log.
+export function processDeliveryReports(store) {
+  const { deliveries } = store.state;
+  const reported = new Set(deliveries.filter((d) => d.reportFor).map((d) => d.reportFor));
+  const due = deliveries.filter((d) => d.status === 'sent' && !reported.has(d.id) && d.at + REPORT_DELAY <= store.state.now);
+  for (const d of due) {
+    appendDelivery(store, {
+      messageId: d.messageId,
+      personId: d.personId,
+      channel: d.channel,
+      status: 'delivered',
+      trigger: 'delivery-report',
+      content: d.content,
+      at: d.at + REPORT_DELAY,
+      reportFor: d.id,
+    });
+  }
+  return due.length;
 }
 
 export function deliver(store, message, recipient, channel, trigger, content, at) {
@@ -79,7 +110,10 @@ export function processDueEscalations(store) {
   let sent = 0;
   for (const e of due) {
     const notice = notices[e.noticeId];
-    if (notice.state !== 'current' || isConfirmedFor(store, notice, e.personId)) {
+    // REQ-20 (CR-6): nothing is sent once the game has started. Compared with `dueAt`, not "now",
+    // so a large clock jump still sends what fell due before kickoff, with its own time.
+    const kickoff = currentDetails(store, store.state.games[notice.gameId]).kickoff;
+    if (notice.state !== 'current' || isConfirmedFor(store, notice, e.personId) || e.dueAt >= kickoff) {
       e.state = 'cancelled';
       continue;
     }

@@ -1,4 +1,5 @@
 // Shared DOM helpers. REQ-05 (distinct FINAL / UNCONFIRMED / Superseded badges with text),
+// REQ-20 (V2, CR-6: "Started" tag next to the official status),
 // REQ-03 / REQ-04 (game detail), REQ-06 / REQ-13 (delivery log, notice status), REQ-12 (alerts).
 
 import { gameStatus, noticeHistory, whereWhen, noticeLabel } from '../domain/notices.js';
@@ -31,6 +32,7 @@ const BADGE_TEXT = {
   unconfirmed: 'UNCONFIRMED',
   superseded: 'Superseded',
   scheduled: 'As scheduled',
+  started: 'Started', // REQ-20
 };
 
 // REQ-05
@@ -45,6 +47,7 @@ export function gameCard({ title, status, whereWhen, selected, onOpen, extra }) 
       el('strong', {}, title),
       statusBadge(status.kind),
       status.kind === 'final' ? el('span', {}, status.label) : null,
+      status.started ? statusBadge('started') : null, // REQ-20
       el('span', { class: 'muted' }, whereWhen),
       el('span', { class: 'spacer' }),
       onOpen ? el('button', { onclick: onOpen }, selected ? 'Close' : 'Open') : null),
@@ -70,7 +73,8 @@ export function gameDetail(store, gameId) {
   const history = noticeHistory(store, gameId).filter((n) => n.state === 'superseded');
   const people = store.state.people;
   const parts = [
-    el('div', { class: 'row' }, statusBadge(st.kind), st.kind === 'final' ? el('span', { class: 'status-line' }, st.label) : null),
+    el('div', { class: 'row' }, statusBadge(st.kind), st.kind === 'final' ? el('span', { class: 'status-line' }, st.label) : null,
+      st.started ? statusBadge('started') : null), // REQ-20
   ];
   if (st.kind === 'scheduled') {
     parts.push(el('p', {}, `${formatTime(st.current.kickoff)} at ${st.current.field}. No official change has been published.`));
@@ -103,7 +107,9 @@ export function gameDetail(store, gameId) {
 }
 
 
+// REQ-13 (V2, CR-7): sent → delivered, or failed.
 function channelCell(value) {
+  if (value === 'sent') return statusBadge('sent', 'sent');
   if (value === 'delivered') return statusBadge('ok', 'delivered');
   if (value === 'failed') return statusBadge('failed', 'failed');
   return el('span', { class: 'muted' }, value);
@@ -128,7 +134,8 @@ export function noticeStatusTable(status) {
       { label: 'Email', render: (r) => channelCell(r.channels.email) },
       { label: 'Text', render: (r) => channelCell(r.channels.text) },
       { label: 'Call', render: (r) => channelCell(r.channels.call) },
-      { label: 'Receipt', render: (r) => (r.familyConfirmed ? statusBadge('ok', 'Confirmed') : statusBadge('failed', 'Not yet confirmed')) },
+      // REQ-13 (CR-8): a parent's receipt = every child named for them is confirmed.
+      { label: 'Receipt', render: (r) => (r.confirmed ? statusBadge('ok', 'Confirmed') : statusBadge('failed', 'Not yet confirmed')) },
     ], status.rows));
 }
 
@@ -137,6 +144,7 @@ const TRIGGER_TEXT = {
   urgent: 'Urgent – sent at once',
   'no-confirmation-5min': 'No confirmation after 5 min',
   'no-confirmation-2min': 'No confirmation after 2 min',
+  'delivery-report': 'Delivery report', // REQ-13 (V2, CR-7)
 };
 
 // REQ-06, REQ-09, REQ-13, Constitution VI: simulated deliveries are visible.
@@ -173,6 +181,8 @@ export function alertCard(alert, onConfirm) {
       alert.superseded ? statusBadge('superseded', 'Superseded by a newer FINAL notice') : statusBadge('final'),
       el('strong', {}, alert.label),
       el('span', { class: 'muted' }, alert.game),
-      alert.confirmed && !alert.superseded ? statusBadge('ok', 'Receipt confirmed') : null),
+      alert.confirmed && !alert.superseded ? statusBadge('ok', 'Receipt confirmed') : null,
+      // REQ-20 (CR-6): an unconfirmed alert of a started game needs no confirmation any more.
+      alert.started && !alert.confirmed && !alert.superseded ? statusBadge('started', 'Game started – no confirmation needed') : null),
     el('p', { class: 'small muted' }, alert.content));
 }

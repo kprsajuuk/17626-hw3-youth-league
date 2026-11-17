@@ -2,10 +2,11 @@
 // REQ-06: activity log (administrator only).
 // REQ-12, REQ-17: alertsFor — a person's messages, unconfirmed ones flagged.
 // REQ-13, Constitution VI: deliveryLog — visible simulated deliveries, scoped to the viewer.
-// REQ-15, REQ-08: parentGames — every eligible child's upcoming games in one list.
+// REQ-15, REQ-08: parentGames — every eligible child's games today (V2: including started ones,
+// REQ-20) and later, in one list. REQ-20 (V2, CR-6): alerts of started games need no confirmation.
 
 import { can } from './permissions.js';
-import { teamOfCoach, gameName, currentDetails } from './store.js';
+import { teamOfCoach, gameName, currentDetails, gameStarted } from './store.js';
 import { noticeLabel, HEADS_UP_PREFIX, gameStatus } from './notices.js';
 import { isConfirmedFor } from './confirmations.js';
 import { childDisplayName, isRestricted } from './recipients.js';
@@ -15,6 +16,13 @@ import { childDisplayName, isRestricted } from './recipients.js';
 function sentContent(store, messageId, personId) {
   const rec = store.state.deliveries.find((d) => d.messageId === messageId && d.personId === personId && d.channel === 'in-app');
   return rec ? rec.content : '';
+}
+
+// REQ-20: the demo clock's calendar day (local time).
+function startOfDay(ts) {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
 }
 
 // REQ-06
@@ -61,7 +69,8 @@ function finalAlertsFor(store, personId) {
     .sort((a, b) => b.publishedAt - a.publishedAt || (a.id < b.id ? 1 : -1))
     .map((n) => {
       const r = n.recipients.find((x) => x.personId === personId);
-      const confirmed = isConfirmedFor(store, n, personId);
+      const confirmed = isConfirmedFor(store, n, personId); // REQ-10 (CR-8): per child
+      const started = gameStarted(store, games[n.gameId]); // REQ-20 (CR-6)
       return {
         id: n.id,
         kind: 'final',
@@ -74,7 +83,9 @@ function finalAlertsFor(store, personId) {
         children: r.childIds.map((cid) => childDisplayName(children[cid])),
         superseded: n.state === 'superseded',
         confirmed,
-        unconfirmed: n.state === 'current' && !confirmed,
+        started,
+        // REQ-12, REQ-20: once the game has started the alert leaves "Needs your confirmation".
+        unconfirmed: n.state === 'current' && !confirmed && !started,
       };
     });
 }
@@ -98,8 +109,9 @@ export function deliveryLog(store, viewerId) {
   });
 }
 
-// REQ-15, REQ-08, REQ-05: upcoming games (kickoff not passed) of the parent's children, minus
-// children the parent is restricted for, sorted by kickoff.
+// REQ-15, REQ-08, REQ-05, REQ-20: games of the parent's children whose current kickoff is today
+// (by the demo clock, started or not) or later, minus children the parent is restricted for,
+// sorted by kickoff. Started games stay until the end of that day, tagged via `started`.
 // labelKind: 'final' (official change), 'unconfirmed' (only an active heads-up), 'scheduled'.
 export function parentGames(store, parentId) {
   const { people, families, children, games } = store.state;
@@ -111,7 +123,7 @@ export function parentGames(store, parentId) {
   const alerts = alertsFor(store, parentId);
 
   return Object.values(games)
-    .filter((g) => currentDetails(store, g).kickoff >= store.state.now)
+    .filter((g) => currentDetails(store, g).kickoff >= startOfDay(store.state.now))
     .map((g) => ({ game: g, kids: kids.filter((c) => g.teamIds.includes(c.teamId)) }))
     .filter((x) => x.kids.length)
     .sort((a, b) => currentDetails(store, a.game).kickoff - currentDetails(store, b.game).kickoff)
@@ -129,6 +141,7 @@ export function parentGames(store, parentId) {
         children: k.map(childDisplayName),
         status,
         labelKind,
+        started: status.started,
         headsUps,
         unconfirmedAlerts: gameAlerts.filter((a) => a.unconfirmed),
       };
