@@ -6,7 +6,7 @@ Each team member evaluated Prototype V1 (tag `v1`) independently. This file merg
 |---|---|---|
 | Member 1 | [`member-1/evaluation.md`](member-1/evaluation.md) | Done |
 | Member 2 | [`member-2/evaluation.md`](member-2/evaluation.md) | In progress (observations done; walkthrough table to fill in) |
-| Member 3 | [`member-3/evaluation.md`](member-3/evaluation.md) | _to do_ |
+| Member 3 | [`member-3/evaluation.md`](member-3/evaluation.md) | Observations done (OBS-10, OBS-11); awaiting Member 3's review and team decision |
 
 ## How to merge
 
@@ -28,4 +28,6 @@ Each team member evaluated Prototype V1 (tag `v1`) independently. This file merg
 | OBS-7 (M2) | A game's field and time cannot be changed in one notice; it takes two FINAL notices, so families get two alerts and escalation restarts | Member 2 | Requirements issue | G-14, G-85, G-02 | V2 change (CR-5, decided 2026-11-16) | REQ-03 allows only one change type per notice. The code follows the spec. |
 | OBS-8 (M2) | Games whose kickoff has passed have no visible "Started" tag; unconfirmed alerts for them stay under "Needs your confirmation" | Member 2 | Requirements issue (missing information) | G-11, G-02, G-39, G-85 | V2 change (CR-6, decided 2026-11-16) | Full version; parents still see a started game until the end of that day. No interview evidence, so the new REQ-20 is an assumption. Ask Brenda / Ray (OQ-7) |
 | OBS-9 (M2) | Delivery status has no "sent" state; only "delivered" and "failed" exist | Member 2 (code review) | Implementation defect | G-33, G-36 | V2 change (CR-7, decided 2026-11-16): fix the code | REQ-13 clearly lists sent / delivered / failed. Changing the spec to drop "sent" was considered and not chosen. The simulated delivery timing (sent → delivered after 1 simulated minute) is added to the spec as an assumption. |
-| OBS-10 | _(next finding; mark the finder, e.g. `OBS-10 (M3)`)_ | | | | | |
+| OBS-10 (M3) | A restricted parent's confirmation marks the whole family as confirmed, so the custodial parent gets no call and the coach sees the restricted child's family as done | Member 3 | Requirements issue | G-33, G-36, G-37, G-31, G-23, D-4 | _Pending team decision_ (proposed: confirmation counted per child) | The "any parent confirms" clarification and REQ-08 were never considered together. Ask Brenda how court-order households should be treated. |
+| OBS-11 (M3) | The spec contradicts itself on whether coaches receive texts; V1 texts them | Member 3 | Requirements issue (inconsistent spec) | G-85, G-30 | _Pending team decision_ | REQ-10 ("recipient") vs. the Assumptions bullet (coaches get in-app + email). Ask Ray. |
+| OBS-12 | _(next finding; mark the finder, e.g. `OBS-12 (M2)`)_ | | | | | |
