@@ -1,16 +1,20 @@
-# Unified Goal Model (HW4, Steps 1–2)
+# Unified Goal Model (HW4, Steps 1–2; revised for V2 in Step 5)
 
 This document merges the three HW2 goal models of our team into one model, records how
 overlapping and conflicting goals were reconciled, and defines the sprint scope used for
 the Spec Kit specification.
 
+**Version 2.** After evaluating Prototype V1, the model was revised: two domain properties
+were added (D-6, D-7) and ten goals, properties, conflicts or obstacles got a note tagged
+"V2:". Nothing was removed. See **§6 V2 changes**. The V1 model is preserved at tag `v1`.
+
 | File | Purpose |
 |---|---|
 | `goal_model_unified.py` | Single source of truth, written with the course `goalmodeling` package (v0.1.6). `python goal_model_unified.py` prints the full model; `python goal_model_unified.py sprint` prints only the sprint branches. Every run also checks that each member goal is mapped. |
-| `export_tables.py` | Regenerates Appendix A and B from the `.py`. |
+| `export_tables.py` | Regenerates Appendix A and B and the §6 V2 table from the `.py` (`unified`, `reverse`, `v2`). |
 | `goal_model_full.png/.svg`, `goal_model_sprint.png/.svg` | **Official diagrams**: standard `goalmodeling` 0.1.6 output (bottom-up), rendered with Mermaid CLI. The only change is that the conflict glyph is replaced with ⚡ so it shows in all fonts. Sprint membership is listed in §5 and Appendix A. |
 | `mermaid_full.txt`, `mermaid_sprint.txt` | mermaid.live links to the official graphs. |
-| `preview_full.png`, `preview_sprint.png` | Draft views drawn with a stand-in renderer, root on the left. **Green** = in sprint, **yellow** = tacit, **grey dashed** = rejected alternative. Kept as easier-to-read companions. |
+| `preview_full.png`, `preview_sprint.png` | Draft views drawn with a stand-in renderer, root on the left. **Green** = in sprint, **yellow** = tacit, **grey dashed** = rejected alternative. Kept as easier-to-read companions. **V1 snapshot:** not regenerated for V2, so D-6 and D-7 are missing; the official diagrams above are current. |
 
 **Regenerate the diagrams**
 
@@ -32,7 +36,7 @@ All three of us interviewed the same Clarity personas: **Brenda** (league admini
 | **LN** | Lynn | `HW2-lynn/goal_model_*.py` (G-1..G-56) | `HW2-lynn/transcript - 1..3.pdf` | `LN:M35` = Mike, turn [35] |
 | **YG** | Ying | `HW2-ying/goal_model_combined.py` (G-1..G-84, D-1..D-5) | `HW2-ying/{brenda,mike,ray}.csv` | `YG:R112` = Ray, turn 112 |
 
-The unified model is renumbered **G-01..G-85, D-1..D-5, O-1..O-2, CF-1..CF-8**. Every unified goal lists the member goals it absorbs. All 182 member goals (42 + 56 + 84) and 5 domain properties are mapped; see Appendix B. `check_coverage()` fails if any of them is missing. Only two unified goals are tacit (G-13, G-69). Both come from Ying's model.
+The unified model is renumbered **G-01..G-85, D-1..D-7, O-1..O-2, CF-1..CF-8** (D-6 and D-7 were added in V2 and come from the V1 evaluation, not from a member model). Every unified goal lists the member goals it absorbs. All 182 member goals (42 + 56 + 84) and 5 domain properties are mapped; see Appendix B. `check_coverage()` fails if any of them is missing. Only two unified goals are tacit (G-13, G-69). Both come from Ying's model.
 
 ## 2. What each member model contributed
 
@@ -57,8 +61,8 @@ All three models agree on the same core chain: an official change has to be **ve
 G-01 Improve[SafeAndWellCoordinatedGameDay]            (H12: abstracted from YH G-24, LN G-56, YG G-1)
 ├─ A STATUS    G-02 Maintain[OfficialStatusClearAndCurrent]   P1 milestones
 │     G-03 ChangeVerified · G-04 OfficialStatusPublished · G-05 Avoid[non-admin official] · G-06 audit log
-│     G-07 FamiliesWarnedEarly (OR: G-08 heads-up ✔ | G-09 coach edits game ✖)
-│     G-10 NoticeMarkedFinal · G-11 GameEntryShowsCurrentStatus (P2: cancel/move, old+new)
+│     G-07 FamiliesWarnedEarly (OR: G-08 heads-up + D-6 pending ends at FINAL ✔ | G-09 coach edits game ✖)
+│     G-10 NoticeMarkedFinal · G-11 GameEntryShowsCurrentStatus (P2: cancel/move, old+new, D-7 cancel is final)
 │     G-15 MasterScheduleCurrent (field availability, team lists)            — out of sprint
 ├─ B REACH     G-21 FamiliesKnowOfficialStatus If StatusPublished   P7 (system can't force reading)
 │     G-22 targeted to affected teams · G-23 Avoid[restricted parent gets child info]
@@ -104,7 +108,7 @@ G-01 Improve[SafeAndWellCoordinatedGameDay]            (H12: abstracted from YH 
 |---|---|---|---|
 | **CF-1** | G-08 heads-up while pending ⚡ G-04 publish only when verified | Ray/Mike want speed (YH:R54, YH:M73, YG:R47) vs. Brenda wants accuracy (YH:B59, YG:B111); YG C-6 is the same tension | **Compromise.** The heads-up is allowed but always labelled *UNCONFIRMED*. It never changes the official status, and the final notice replaces it. **In sprint** because it is highly uncertain whether families will actually tell the two apart. |
 | **CF-2** | G-09 coach updates the game ⚡ G-05 only the admin makes it official | Lynn's Ray (LN:R19, R21) vs. Brenda in all three sets (YH:B55, LN:B68, YG:B113) | **Prioritize G-05** (authority and liability). G-09 is kept as a rejected alternative. Ray's real need, speed, is met by G-08. |
-| **CF-3** | G-29 text with every notice ⚡ G-85 avoid duplicate notifications | YH Mike wants text always (YH:M23, M73) vs. YG Mike: "too many duplicate messages would be annoying" (YG:M77) and push with SMS *fallback* (YG:M73) | **Compromise G-30:** text is sent if there is no ack within 5 min, or right away if the change is urgent (kickoff within 2 h); G-31 also places a call. The 5-min and 2-h thresholds are assumptions to check in V1. **In sprint.** |
+| **CF-3** | G-29 text with every notice ⚡ G-85 avoid duplicate notifications | YH Mike wants text always (YH:M23, M73) vs. YG Mike: "too many duplicate messages would be annoying" (YG:M77) and push with SMS *fallback* (YG:M73) | **Compromise G-30:** text is sent if there is no ack within 5 min, or right away if the change is urgent (kickoff within 2 h); G-31 also places a call. The 5-min and 2-h thresholds are assumptions to check in V1. **In sprint.** **V2:** V1 showed that the compromise covers only non-urgent changes; for urgent changes every channel still fires at once, plus a call (OBS-3). The urgent case stays **unresolved** (ask Mike, OQ-6). Texts to coaches (CR-9) are an accepted cost against G-85. |
 | **CF-4** | G-46 system suggests a nearby trusted parent ⚡ G-59 system must not match or approve rides | Mike (LN:M61, YG:M25) vs. Brenda (LN:B54, YG:B83, B100) | **Unresolved.** Does *suggesting* count as *matching*? We need to ask Brenda. Deferred. |
 | **CF-5** | G-47 coach matches families / finds a backup driver ⚡ G-58 league not liable | Mike (YH:M38), Lynn's Ray (LN:R44), Ying's Ray (YG:R59) vs. Brenda (YH:B34, LN:B54) and **Yunhan's Ray, who refuses** (YH:R8) | **Prioritize G-58.** We also record that the three Ray interviews contradict each other: two say they informally connect families, one refuses to coordinate. Needs clarification. |
 | **CF-6** | G-56 missed-pickup alert ⚡ G-60 ride must not look league-guaranteed | Mike (YH:M18, YG:M42) vs. Brenda (YG:B80, B83); YG C-1 | **Unresolved.** A candidate fix is to word the alert as parent-to-parent status and show it with the G-61 disclaimer. Deferred. |
@@ -120,7 +124,7 @@ These goals are shown in `goal_model_sprint.png`; they are the green goals in `p
 
 | Branch | Goals in sprint |
 |---|---|
-| A STATUS | G-02, G-03 (+D-1), G-04, G-05, G-06, G-07 → G-08 (G-09 shown as rejected), G-10, G-11 → G-12, G-14 (+D-2) |
+| A STATUS | G-02, G-03 (+D-1), G-04, G-05, G-06, G-07 → G-08 (+D-6, V2) (G-09 shown as rejected), G-10, G-11 → G-12, G-14 (+D-2, +D-7, V2) |
 | B REACH | G-21, G-22, G-23 → G-24, G-25 (+D-4), G-26 → G-27, G-28 → G-30 (G-29 rejected), G-31, G-33 → G-34, G-35, G-36, G-37, G-38, G-39 (game status only) |
 | G ADOPTION | G-80 (alert ≤ 1 min, used as an acceptance criterion), G-82 → G-83, G-85 |
 
@@ -135,7 +139,7 @@ These goals are shown in `goal_model_sprint.png`; they are the green goals in `p
 | C ACT (rides), D LIABILITY | High value for Mike, but 4 of the 8 conflicts sit here, two are unresolved (CF-4, CF-6), and the Ray interviews contradict each other (CF-5). Building rides before Brenda clarifies risks building exactly what she prohibits. The branch also depends on B (G-50). |
 | E PRIVACY (except G-23) | Background checks, message visibility and the personal-data rules matter mostly once rides and messaging exist. |
 | F RECORDS | Ray's attendance and playing-time goals are separate from the change chain, and YH's HW1 scope already excluded on-field processes. |
-| A: G-15 master schedule, G-13 withdrawn notice | This is administrative upkeep, so the sprint assumes a correct schedule (mock data). G-13 is tacit and is a candidate edge case for V2. |
+| A: G-15 master schedule, G-13 withdrawn notice | This is administrative upkeep, so the sprint assumes a correct schedule (mock data). G-13 is tacit and is a candidate edge case for V2. **V2:** still out of scope; V1 showed a cancelled game could be silently "moved" (OBS-2), so V2 treats a cancellation as final (D-7) instead of building reinstatement. |
 | B: G-32 phone relay for families without smartphones | An edge case handled outside the system (the coach calls). |
 
 **Sprint assumptions (to state in the spec)**
@@ -143,6 +147,51 @@ These goals are shown in `goal_model_sprint.png`; they are the green goals in `p
 2. Email, SMS and calls are **simulated** with a delivery log. No real messages are sent.
 3. "Urgent" means kickoff within 2 hours (from YH UC-01). The SMS fallback fires after 5 minutes without an ack (YG:M73 "quickly", interpreted by Ying).
 4. An acknowledgment means "the family confirmed receipt", never "the family has read and understood" (G-38).
+
+## 6. V2 changes (Step 5)
+
+Evaluating Prototype V1 (`docs/evaluation/v1/team-summary.md`) changed our understanding of
+several goal relationships. The changes below follow `docs/v2-change-request.md` (CR-1…CR-9).
+Each one is recorded in `goal_model_unified.py` with a note tagged "V2:", so the table at the
+end of this section is generated from the model (`python export_tables.py v2`).
+
+**What changed in our understanding**
+
+| CR | Observation | What we learned about the goal model | Model change |
+|---|---|---|---|
+| CR-1 | OBS-1: a heads-up could be sent after a FINAL notice | G-07's condition *If ChangePending* was lost on the way to the spec, because "pending" was never defined. | New **D-6** in G-07's heads-up alternative; note on G-07 |
+| CR-2 | OBS-2: a cancelled game could be silently "moved" | G-13 (withdrawing a cancellation) was tacit and out of scope, yet the prototype could do it without the wording families need. We chose to treat a cancellation as final rather than build G-13 on an assumption. | New **D-7** in G-11's refinement; note on G-13 (kept tacit, out of sprint). The D-1 → G-13 relation is kept: D-1 is why G-13 may be needed later (OQ-5). |
+| CR-3 | OBS-3, OBS-4: urgent changes fire every channel; heads-ups never escalate | CF-3's compromise only covers non-urgent changes; O-1 is not resolved for heads-ups. | Note on CF-3 (urgent case **unresolved**); accepted risk on O-1. Both kept, not removed. |
+| CR-5 | OBS-7: field and time need two FINAL notices | D-2 treated a change as exactly one of three kinds, which produced duplicate notices (G-85). | Notes on D-2 and G-14 |
+| CR-6 | OBS-8: no "Started" state | G-11's "current status" had no post-kickoff state. | Note on G-11 (no interview evidence; OQ-7) |
+| CR-8 | OBS-10: a restricted parent's confirmation counted for the whole family | G-33 (receipt confirmed) and D-4 (court orders) were never considered together; confirmation must be per child. | Notes on G-33 and D-4 (OQ-8) |
+| CR-9 | OBS-11: coaches texted, spec inconsistent | G-30 did not say which agents it applies to. | Note on G-30: applies to coaches too (OQ-9) |
+
+CR-4 (spec hygiene) and CR-7 (missing "sent" status, an implementation defect) do not change
+the goal model.
+
+**Unresolved and assumed (preserved, not removed)**
+
+- CF-3 urgent case (OQ-6), O-1 for heads-ups (OQ-6), D-7 cancellation is final (OQ-5),
+  per-child confirmation (OQ-8), texts to coaches (OQ-9), started-game history (OQ-7).
+- D-6 and D-7 have no interview evidence; they are team decisions based on the V1 evaluation.
+
+**V2 notes in the model** (generated)
+
+| Element | V2 change (from the model) |
+|---|---|
+| G-07 FamiliesWarnedEarly | condition made explicit after V1 evaluation (CR-1, OBS-1, D-6) |
+| G-11 GameEntryShowsCurrentStatus | started state made explicit (CR-6, OBS-8); no direct interview evidence |
+| G-13 CancelMarkCleared | reversal blocked; cancellation treated as final (CR-2 option B, D-7). Revisit if Brenda confirms reinstatement happens (OQ-5); D-1 is why it may be needed later |
+| G-14 OldAndNewDetailsAndActionShown | one notice may change both field and time (CR-5, OBS-7) |
+| G-30 TextSent | applies to coaches as well as parents; calls stay parents-only (CR-9, OBS-11; ask Ray, OQ-9) |
+| G-33 ReceiptConfirmed | receipt confirmation counted per child, not per family (CR-8, OBS-10); assumption, ask Brenda (OQ-8) |
+| D-2 A game change is a cancellation, a field move or a time move | a move may change the field, the time, or both (CR-5, OBS-7) |
+| D-4 Some families have court orders on file | also constrains confirmation; a restricted parent's confirmation never covers the restricted child (CR-8, OBS-10) |
+| D-6 A change is pending only until a FINAL notice for that game is published | added after V1 evaluation (CR-1, OBS-1); team definition, no interview evidence |
+| D-7 An official cancellation is final (team assumption; confirm with Brenda, OQ-5) | added after V1 evaluation (CR-2 option B, OBS-2); no interview evidence; risk against D-1 accepted |
+| CF-3 G-29 vs. G-85 (text on every notice vs. avoid duplicate notifications) | urgent case unresolved (CR-3, OBS-3; ask Mike, OQ-6) |
+| O-1 AlertMissedWhileOnShift | heads-ups (G-08) never escalate to text or call; accepted risk (CR-3, OBS-4; ask Mike, OQ-6) |
 
 ## Appendix A — Unified goals (generated by `export_tables.py`)
 
@@ -238,9 +287,10 @@ These goals are shown in `goal_model_sprint.png`; they are the green goals in `p
 | D-3 | Domain | Parks dept supplies field availability; it can change weekly | — | - |  | YG D-2 | YG:B102 |
 | D-4 | Domain | Some families have court orders on file | — | - | ✅ | YG D-4 | YG:B66, YH:B32 |
 | D-5 | Domain | Insurer requires background checks for drivers of non-family children | — | - |  | YG D-5 | YG:B66 |
+| D-6 | Domain | A change is pending only until a FINAL notice for that game is published | — | - | ✅ | — | — (not in transcript) |
+| D-7 | Domain | An official cancellation is final (team assumption; confirm with Brenda, OQ-5) | — | - | ✅ | — | — (not in transcript) |
 
-
-**Obstacles:** O-1 AlertMissedWhileOnShift obstructs G-26 and is resolved by G-30 and G-31 (YH:M23, YG:M25, YG:B20). O-2 DriverDelayedOrNoShow obstructs G-53 and is resolved by G-56 and G-57 (LN:M35, LN:M37, YG:M58).
+**Obstacles:** O-1 AlertMissedWhileOnShift obstructs G-26 and is resolved by G-30 and G-31 (YH:M23, YG:M25, YG:B20). *V2:* heads-ups (G-08) never escalate, so O-1 stays unresolved for heads-ups; accepted risk (CR-3, OBS-4, OQ-6). O-2 DriverDelayedOrNoShow obstructs G-53 and is resolved by G-56 and G-57 (LN:M35, LN:M37, YG:M58).
 
 ## Appendix B — Member goal → unified goal
 
@@ -445,4 +495,3 @@ These goals are shown in `goal_model_sprint.png`; they are the green goals in `p
 | YG D-3 | D-2 |
 | YG D-4 | D-4 |
 | YG D-5 | D-5 |
-

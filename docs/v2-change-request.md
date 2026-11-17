@@ -79,7 +79,7 @@ Add an open question:
 **Decision (2026-11-16): option B.** The team treats an official cancellation as final. There is no interview evidence that a cancelled game is ever reinstated (G-13 is tacit), so we do not build a reinstatement feature on an assumption. The remaining risk (D-1: the city's decision can change) is kept and documented, not removed: it is an open question for Brenda (OQ-5), and option A stays recorded here as the alternative if she says reinstatement happens.
 
 **Goal model update (option B):**
-- Add a domain property **D-7** "An official cancellation is final (team assumption; confirm with Brenda, OQ-5)". Put it next to D-2 in the refinement of G-12.
+- Add a domain property **D-7** "An official cancellation is final (team assumption; confirm with Brenda, OQ-5)". Put it next to D-2 in the refinement of G-11 (P2; G-12 is a leaf, D-2 sits in G-11's refinement).
 - Keep **G-13** out of the sprint and `tacit=True`. Add `note="V2: reversal blocked; cancellation treated as final (CR-2 option B, D-7). Revisit if Brenda confirms reinstatement happens (OQ-5)"`.
 - Keep the relation between D-1 and G-13 visible: D-1 (timing not guaranteed) is the reason G-13 might be needed later.
 
