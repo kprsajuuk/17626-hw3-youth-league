@@ -17,7 +17,24 @@ no real messages are sent and no external services are called.
 | **Ray** | Coach (U10 Blue) | Sends an UNCONFIRMED heads-up and sees which families have not confirmed |
 | **Mike** | Parent who works shifts, two children | Sees both children's games in one view and confirms receipt |
 
-## Quick start
+## Live demo
+
+The tagged release `v1` is deployed as a static site on Netlify:
+
+| Page | URL |
+|------|-----|
+| App | <https://youth-league-v1.netlify.app/> |
+| Unit tests | <https://youth-league-v1.netlify.app/tests/> (expect `72 / 72 tests passed`) |
+
+This deployment is a fixed snapshot of tag `v1` (commit `0f11290`). It is not connected to the
+repository, so later commits on `main` do not change it. To deploy it again, export the tagged
+`app/` folder and drag the folder into the site's **Deploys** page on Netlify:
+
+```bash
+mkdir -p deploy-v1 && git archive v1:app | tar -x -C deploy-v1
+```
+
+## Run locally
 
 Requirements: `python3` (preinstalled on macOS) and a modern browser. There is nothing to install
 and no build step.

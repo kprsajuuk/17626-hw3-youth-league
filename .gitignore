@@ -15,3 +15,7 @@ venv/
 # Logs and env
 *.log
 .env*
+
+# Deployment
+deploy-v1/
+deploy-v2/
