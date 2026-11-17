@@ -2,7 +2,7 @@
 
 **Inputs:** `docs/evaluation/v1/team-summary.md` (consolidated observations; OBS-1…OBS-6 first reported in `docs/evaluation/v1/member-1/evaluation.md`) and `docs/traceability.md` (V1 matrix).
 **Baseline:** V1 = tag `v1` (commit `0f11290` plus the evaluation docs).
-**Status:** draft, based on member-1's evaluation. Update it once the other members' findings are merged into `team-summary.md`: add a CR for any new finding that the team decides to change in V2.
+**Status:** draft. Covers OBS-1…OBS-9 (Members 1 and 2). Team decisions on CR-2, CR-5, CR-6, CR-7 and the OBS-1 classification were made on 2026-11-16 (see §1). Add a CR for any new finding from Member 3 that the team decides to change in V2.
 **Owner of V2:** _<name>_. The owner supervises the SE agent; the team reviews the spec before any code is changed.
 
 This document tells the V2 owner **what** to change, **why** (stakeholder goal and evidence), and **in which order**. It follows Step 5 of the assignment:
@@ -16,11 +16,16 @@ This document tells the V2 owner **what** to change, **why** (stakeholder goal a
 | ID | From | Type | Change | Required? |
 |---|---|---|---|---|
 | **CR-1** | OBS-1 | Requirements change (spec + goal model + code) | A heads-up is allowed only while the change is still pending, i.e. no current FINAL notice exists. | **Yes**. This is the main requirements-level improvement. |
-| **CR-2** | OBS-2 | Requirements change (spec + goal model + code) | A cancelled game can only be changed through an explicit **"Reinstated – game is ON"** notice. It can no longer be silently "moved". | **Yes**, recommended. **Team decision needed** (see §3). |
+| **CR-2** | OBS-2 | Requirements change (spec + goal model + code) | A cancellation is **final**: once a game is officially cancelled, no further change can be published for it. It can no longer be silently "moved". | **Yes**. **Decided 2026-11-16: option B** (see §3). |
 | **CR-3** | OBS-3, OBS-4 | Documentation only (spec + goal model) | Record two unresolved trade-offs (urgent duplicates; heads-ups don't escalate) as open questions for Mike. No code change. | Yes (documentation) |
 | **CR-4** | OBS-5, OBS-6 | Spec hygiene | Write the validation rules the agent invented into the spec; fix the Saturday/Sunday scenario. | Yes (small) |
+| **CR-5** | OBS-7 | Requirements change (spec + goal model + code) | One "Moved" notice can change the field, the time, or both. Today that takes two FINAL notices. | **Yes**. Decided 2026-11-16 (see §6). |
+| **CR-6** | OBS-8 | Requirements change (spec + goal model + code) | Games whose kickoff has passed get a clear "Started" tag (parents still see them until the end of that day). Unconfirmed alerts for started games stop asking for confirmation and stop escalating. | **Yes**. Decided 2026-11-16 (see §7). |
+| **CR-7** | OBS-9 | Implementation correction (code + small spec assumption) | Add the missing "sent" delivery status required by REQ-13. | **Yes**. Decided 2026-11-16 (see §8). |
 
-**Out of scope for V2:** everything that was deferred in `docs/goal-model.md` §5 (rides, liability, other privacy features, coach records). Do not add features beyond CR-1…CR-4.
+**Decision on OBS-1's classification (2026-11-16):** *requirements issue*. The spec never defined when a change stops being "pending", and the fix starts with the spec (D-6). The other view, that REQ-05's words "for a pending change" were already enough and the code failed to check them, is recorded in the OBS-1 notes in `team-summary.md`.
+
+**Out of scope for V2:** everything that was deferred in `docs/goal-model.md` §5 (rides, liability, other privacy features, coach records). Do not add features beyond CR-1…CR-7.
 
 ---
 
@@ -53,44 +58,44 @@ Add an open question:
 
 ---
 
-## 3. CR-2 — Reinstating a cancelled game explicitly
+## 3. CR-2 — A cancellation is final
 
 **Observation (OBS-2).** Brenda cancelled the game ("No game today; do not travel") and then published a field move. Mike's new alert said only "FINAL – Moved: Field 3 → Field 7". It never said that the cancellation was withdrawn or that the game is ON again. Screenshot: `docs/evaluation/v1/member-1/screenshots/X5_mike_cancel_then_move.png`.
 
 **Why this matters (goal model).**
-- G-21 *FamiliesKnowOfficialStatus* requires that families who already acted on "do not travel" understand the reversal. Mike works shifts and needs short, unambiguous alerts (YH:M23).
-- D-1 says the city's decision timing is not guaranteed, so a reversed call is realistic.
-- In Step 1 we left G-13 (*CancelMarkCleared If NoticeWithdrawn*, tacit) **out of scope**. V1 shows that the situation happens anyway, so it must be specified.
+- G-21 *FamiliesKnowOfficialStatus* requires that families who already acted on "do not travel" are never left with an ambiguous status. Mike works shifts and needs short, unambiguous alerts (YH:M23).
+- "FINAL" in V1 means *official*, not *irreversible*: REQ-04 lets a later FINAL notice replace an earlier one. The spec never said whether a cancellation is a special case.
+- In Step 1 we left G-13 (*CancelMarkCleared If NoticeWithdrawn*, tacit) **out of scope**. V1 shows that the prototype could reverse a cancellation anyway, without the wording families need.
 
-**Team decision (write the choice and the reason into the spec's Conflict Decisions / Assumptions):**
+**Options considered:**
 
 | Option | Behavior | Pros | Cons |
 |---|---|---|---|
-| **A (recommended)** | On a cancelled game the only allowed change is **"Reinstated"** (optionally with a new field and/or time). The notice reads "FINAL – Reinstated: the cancellation is withdrawn — the game is ON", followed by when and where. | Matches reality (D-1); the wording removes the ambiguity | One more change type |
-| B | Block every change after a cancellation; Brenda must handle it outside the system | Simplest | Brenda loses the official channel at the worst moment; contradicts G-02 |
+| A (not chosen) | On a cancelled game the only allowed change is **"Reinstated"**. The notice reads "FINAL – Reinstated: the cancellation is withdrawn — the game is ON". | Covers a reversed city decision (D-1) | New change type and REQ, built on an assumption with no interview evidence (G-13 is tacit) |
+| **B (chosen)** | A cancellation is final. Once a game is officially cancelled, no further change can be published for it. | Simplest; matches how families read "cancelled"; no new behavior built on a tacit goal | If the city ever reverses a cancellation, Brenda must handle it outside the system (risk against D-1 / G-02) |
 
-**Goal model update (option A):**
-- Bring **G-13** into the sprint and rename it **"CancellationWithdrawnAnnounced If CancellationReversed"**.
-- Set `sprint=True`. Keep `tacit=True`, because there is still no direct interview evidence.
-- Add `note="V2: brought into scope from V1 evaluation (OBS-2); evidence D-1 + evaluation; confirm with Brenda"`.
+**Decision (2026-11-16): option B.** The team treats an official cancellation as final. There is no interview evidence that a cancelled game is ever reinstated (G-13 is tacit), so we do not build a reinstatement feature on an assumption. The remaining risk (D-1: the city's decision can change) is kept and documented, not removed: it is an open question for Brenda (OQ-5), and option A stays recorded here as the alternative if she says reinstatement happens.
 
-**Spec update (option A).**
+**Goal model update (option B):**
+- Add a domain property **D-7** "An official cancellation is final (team assumption; confirm with Brenda, OQ-5)". Put it next to D-2 in the refinement of G-12.
+- Keep **G-13** out of the sprint and `tacit=True`. Add `note="V2: reversal blocked; cancellation treated as final (CR-2 option B, D-7). Revisit if Brenda confirms reinstatement happens (OQ-5)"`.
+- Keep the relation between D-1 and G-13 visible: D-1 (timing not guaranteed) is the reason G-13 might be needed later.
 
-Add a new requirement:
+**Spec update (option B).** Extend REQ-03 (the full revised text is in §6, together with CR-5):
 
-> **REQ-20 (new in V2)**: When a game's current official status is *Cancelled*, the only change the administrator MAY publish is **Reinstated**, with the original details or a new field and/or time. It still needs a verification record (REQ-01). The notice MUST be marked FINAL and MUST state explicitly that the cancellation is withdrawn and the game will take place, with the date, time and field. It replaces the cancellation notice (REQ-04) and follows the same recipient, privacy, delivery and escalation rules (REQ-07…REQ-11). Field or time moves on a cancelled game MUST be rejected with the reason "use Reinstate for a cancelled game". *Goals*: G-13, G-21, D-1. *Evidence*: none in transcripts (assumption, tacit); V1 evaluation OBS-2.
+> Once a game's current official status is *Cancelled*, the cancellation is final: no further change MAY be published for that game. The publish control MUST NOT be offered for a cancelled game, and the system MUST reject an attempt with the reason "This game is cancelled. A cancellation is final." *Assumption*: D-7 (confirm with Brenda, OQ-5).
 
-Extend REQ-03 so that the list of change types includes "reinstated (only after a cancellation; REQ-20)".
+Add an acceptance scenario to User Story 1:
 
-Add acceptance scenarios to User Story 1:
+> **[REQ-03]** **Given** U10 Blue vs U10 Red is officially cancelled, **When** the administrator opens it, **Then** no publish control is offered, and a publish attempt through the domain is rejected with "This game is cancelled. A cancellation is final."; Mike's view still shows "FINAL – Cancelled".
 
-> **[REQ-20]** **Given** U10 Blue vs U10 Red is officially cancelled, **When** the administrator opens it, **Then** the only change type offered is "Reinstated", and a field or time move is rejected.
->
-> **[REQ-20]** **Given** the game was cancelled and Mike received "No game today; do not travel", **When** Brenda publishes a verified reinstatement at Field 7, **Then** Mike sees "FINAL – Reinstated: the cancellation is withdrawn — the game is ON, Sat 10:00 at Field 7", and the cancellation is shown as superseded.
+Add to Conflict Decisions / Assumptions: "A cancellation is final (D-7). Option A (Reinstated) was considered and not chosen because G-13 has no interview evidence; risk against D-1 accepted (OBS-2)."
 
 Add an open question:
 
-> **OQ-5**: Brenda — does a cancelled game ever get reinstated in practice, and who decides? (Our assumption is the city/parks department, verified by Brenda.)
+> **OQ-5**: Brenda — does a cancelled game ever get reinstated in practice, and who decides? If yes, a later version adds option A (a "Reinstated" notice).
+
+**Code impact (for `/speckit-converge`):** `can(…, 'publish')` in `domain/permissions.js` returns false for a cancelled game; `publishChange()` in `domain/notices.js` rejects any change on a cancelled game with a new error `game-cancelled` (V1 only rejected cancel-after-cancel); the error message in `ui/adminView.js`. Because a cancelled game already has a FINAL notice, CR-1 also blocks heads-ups for it.
 
 ---
 
@@ -115,7 +120,99 @@ Add an open question:
 
 ---
 
-## 6. Procedure for the V2 owner
+## 6. CR-5 — Move field and time in one notice
+
+**Observation (OBS-7).** The publish form offers one change type at a time: cancelled, moved field or moved time. A real change can move both, e.g. "Field 3 at 10:00 → Field 7 at 13:00". The only way to do that today is to publish two FINAL notices in a row. The second notice supersedes the first. Families get two notices, and the 5-minute text and 2-minute call timers start over.
+
+**Where this comes from.**
+- The spec, not the code. REQ-03 says a change "MUST be one of: cancelled, moved to another field, moved to another time". `domain/notices.js` (`CHANGE_TYPES`, `publishChange()`) and the radio group in `ui/adminView.js` do exactly that. **Classification:** requirements issue.
+
+**Why this matters (goal model).**
+- G-85 *DuplicateAndTrivialNotifications*: two notices for one real-world change are a duplicate (YG:M77).
+- G-02 *OfficialStatusClearAndCurrent* and G-14 *OldAndNewDetailsAndActionShown*: families should see the full old → new picture in one message.
+
+**Decision (2026-11-16): adopted.**
+
+**Goal model update:**
+- D-2 "A game change is a cancellation, a field move or a time move": add `note="V2: a move may change the field, the time, or both (CR-5)"`.
+- G-14 already covers "field or time changed"; add `note="V2: one notice may change both (CR-5)"`.
+
+**Spec update.** Revise REQ-03 (this text also includes CR-2 and the CR-4 validation rule):
+
+> **REQ-03 (revised in V2)**: A published change MUST be one of: **cancelled**, or **moved** (a new field, a new kickoff time, or both). A move MUST change at least one detail, and a new kickoff MUST be in the future. Once a game's current official status is *Cancelled*, the cancellation is final: no further change MAY be published for that game (CR-2, D-7). The game entry MUST then show the current official status with the old and new details and an instruction for families.
+
+Add an acceptance scenario to User Story 1:
+
+> **[REQ-03]** **Given** U10 Blue vs U10 Red is at Field 3, Sat 10:00, **When** the administrator publishes a verified move to Field 7 at 13:00, **Then** one FINAL notice is sent per recipient per channel, labelled "FINAL – Moved: Field 3, 10:00 → Field 7, 13:00".
+
+**Code impact (for `/speckit-converge`):** `CHANGE_TYPES`, `publishChange()`, `noticeLabel()`, `renderNoticeContent()`, the default instruction in `ui/adminView.js`, and the publish form (show both inputs for "Moved").
+
+**Open question:** none for stakeholders. This is a team decision; record it in the spec's Conflict Decisions / Assumptions.
+
+---
+
+## 7. CR-6 — Clear status for games that have started
+
+**Observation (OBS-8).** Once kickoff has passed, the game can no longer be changed: publish and heads-up are blocked (`gameStarted()` in `domain/store.js`, `can()` in `domain/permissions.js`). But no view shows that the game has started. Brenda or Ray only finds out from the error message "This game has already started…". Related:
+- `domain/queries.js` `parentGames()` hides games whose kickoff has passed, so the game simply disappears for parents.
+- `alertsFor()` ignores time. An unconfirmed FINAL alert stays under "Needs your confirmation" even after the game is over.
+
+**Where this comes from.** The spec. No requirement says how a started game is shown or what happens to its unconfirmed alerts. **Classification:** requirements issue (missing information).
+
+**Why this matters (goal model).**
+- G-11 *GameEntryShowsCurrentStatus* and G-02 *OfficialStatusClearAndCurrent*: "started" is part of the current status.
+- G-39 *EachChildGameStatusInOneView*: a parent should understand why a game is no longer listed.
+- G-85: asking for confirmation of an alert about a finished game is a trivial notification.
+
+**Decision (2026-11-16): adopted, full version.** Parents keep seeing a started game, tagged "Started", until the end of that day.
+
+**Goal model update:** add `note="V2: started state made explicit (CR-6); no direct interview evidence"` to G-11.
+
+**Spec update.** Add a new requirement (REQ-20 is free, because CR-2 option B adds no new requirement):
+
+> **REQ-20 (new in V2, assumption from V1 evaluation)**: Once a game's current kickoff time has passed, every view that lists the game MUST tag it "Started", and its publish and heads-up controls MUST NOT be offered. A parent's view MUST keep showing a started game, tagged "Started", until the end of that day. Unconfirmed FINAL alerts for a started game MUST move out of "Needs your confirmation" and MUST NOT trigger further texts or calls. *Goals*: G-11, G-02, G-39, G-85. *Evidence*: none — assumption from V1 evaluation (OBS-8).
+
+Extend REQ-15: "upcoming games" → "upcoming games, and games that started earlier the same day (tagged "Started", REQ-20)".
+
+Add acceptance scenarios to User Story 1 and User Story 5:
+
+> **[REQ-20]** **Given** the demo clock is past the kickoff of U10 Blue vs U10 Red, **When** the administrator or the coach opens the game list, **Then** the game is tagged "Started" and no publish or heads-up control is shown.
+>
+> **[REQ-20, REQ-15]** **Given** the same started game and Mike has not confirmed its FINAL notice, **When** Mike opens his view, **Then** the game is still listed, tagged "Started"; the alert is no longer under "Needs your confirmation"; and no further text or call is sent.
+
+**Assumption:** "Started" is the only post-kickoff state. The mock data has no game duration, so there is no "Finished" state in V2.
+
+**Code impact (for `/speckit-converge`):** game cards and details in `ui/components.js`; `parentGames()` (keep same-day started games) and `alertsFor()` (`unconfirmed` false once started) in `domain/queries.js`; `processDueEscalations()` in `domain/delivery.js` (cancel escalations for started games); `ui/parentView.js`.
+
+**Open question for stakeholders (OQ-7):** Brenda / Ray — after kickoff, does anyone need to see the game's change history in the app, or is it no longer relevant?
+
+---
+
+## 8. CR-7 — Add the missing "sent" delivery status
+
+**Observation (OBS-9).** REQ-13 requires per-channel delivery status "sent / delivered / failed". `domain/log.js` only allows `delivered` and `failed`, so "sent" never appears. REQ-13 is *Partially satisfied* in `docs/traceability.md`.
+
+**Classification:** implementation defect. The spec is clear and the code does not match it.
+
+**Decision (2026-11-16): fix the code** to match REQ-13 (instead of removing "sent" from the spec).
+
+**Goal model update:** none.
+
+**Spec update.** The simulated delivery needs a timing rule, and Constitution Principle I says no behavior may exist unless it is in `spec.md`. Add to the Assumptions:
+
+> **Simulated delivery (V2)**: When a message is dispatched on a channel, it is recorded as **sent**. One simulated minute later, a delivery report is recorded: **delivered**, or **failed** with a reason. A channel with no contact on file is recorded as **failed** at once. The delivery log is append-only (REQ-06), so a report is a new record; status views show the latest record per channel.
+
+Add an acceptance scenario to User Story 3:
+
+> **[REQ-13]** **Given** a change was just published, **When** the administrator opens the notice status, **Then** the email and in-app channels show "sent"; **When** the demo clock advances by 1 minute, **Then** they show "delivered" (or "failed" with a reason).
+
+**Code impact (for `/speckit-converge`):** `STATUSES` (and a new trigger for delivery reports) in `domain/log.js`; `deliver()` and the clock-driven processing in `domain/delivery.js`; status tables in `ui/components.js`; tests that expect `delivered` immediately (`app/tests/delivery.test.js`, `app/tests/confirmations.test.js`).
+
+**Check:** REQ-16 (initial alerts dispatched within 1 minute) still holds, because dispatch ("sent") happens at publish time.
+
+---
+
+## 9. Procedure for the V2 owner
 
 ```bash
 # 0. Freeze V1 (once)
@@ -133,39 +230,44 @@ echo '{"feature_directory": "specs/001-game-change-notice"}' > .specify/feature.
 
 **Tools needed on the V2 owner's machine:** Claude Code (desktop app → **Code** tab, Local, repository folder; or the CLI) **or** Cursor, plus `python3` to run the prototype. The Spec Kit commands (`.claude/skills/speckit-*`) and scripts (`.specify/`) are already in the repository, so `specify init` must **not** be run again. The `specify` CLI is only needed to add Cursor support (`specify integration install cursor-agent`).
 
-1. **Goal model first.** Edit `docs/goal_model_unified.py` (D-6, G-07 note, G-13 into scope, CF-3 note). Run it to check coverage, regenerate the diagrams, and add a short "V2 changes" section to `docs/goal-model.md`. Commit.
+1. **Goal model first.** Edit `docs/goal_model_unified.py` (D-6 and G-07 note; D-7 and G-13 note; CF-3 note; D-2 and G-14 notes; G-11 note). Run it to check coverage, regenerate the diagrams, and add a short "V2 changes" section to `docs/goal-model.md`. Commit.
 2. **Spec second (before any code).** In Claude Code (or Cursor), give the agent the prompt in Appendix A. Do **not** use `/speckit-specify` for this, because it would create a new feature folder (`specs/002-…`) instead of revising ours. Review the diff of `spec.md` as a team. Commit.
 3. **Optional:** run `/speckit-clarify` on the revised spec.
 4. Run `/speckit-plan` to update the plan for the changed requirements.
-5. Run `/speckit-converge`. It compares the code with the revised spec and appends only the missing work as new tasks in `tasks.md`. Check that the new tasks cover CR-1, CR-2 and CR-4 and nothing else.
+5. Run `/speckit-converge`. It compares the code with the revised spec and appends only the missing work as new tasks in `tasks.md`. Check that the new tasks cover CR-1, CR-2, CR-4, CR-5, CR-6 and CR-7 and nothing else (CR-3 has no code change).
 6. Run `/speckit-analyze` (consistency report). Fix the spec or the tasks if it reports gaps.
-7. Run `/speckit-implement`. The agent must also update or add unit tests for REQ-05 and REQ-20.
-8. **Verify** (§7), update `docs/traceability.md` (§8), commit, then `git tag v2 && git push origin v2`.
-9. Update `README.md` on `main`: links to v1 / v2, a "What changed in V2" table (CR-1…CR-4 → REQ → goal), and the Roles and Responsibilities section.
+7. Run `/speckit-implement`. The agent must also update or add unit tests for REQ-05 (CR-1), REQ-03 (CR-2, CR-5), REQ-20 (CR-6) and REQ-13 (CR-7).
+8. **Verify** (§10), update `docs/traceability.md` (§11), commit, then `git tag v2 && git push origin v2`.
+9. Update `README.md` on `main`: links to v1 / v2, a "What changed in V2" table (CR-1…CR-7 → REQ → goal), and the Roles and Responsibilities section.
 
 ---
 
-## 7. Acceptance checks for V2
+## 10. Acceptance checks for V2
 
 | Check | Expected in V2 |
 |---|---|
-| Unit tests | All pass, including new tests for REQ-05 (rejected after FINAL) and REQ-20 |
-| Walkthrough A–H (regression) | Same results as V1 |
+| Unit tests | All pass, including new or updated tests for REQ-05 (rejected after FINAL), REQ-03 (cancelled is final; combined move), REQ-20 (started games) and REQ-13 (sent → delivered) |
+| Walkthrough A–H (regression) | Same results as V1, except that channel status first shows "sent" and becomes "delivered" after 1 simulated minute (CR-7) |
 | X1 (heads-up after FINAL) | No heads-up control after FINAL; a domain call is rejected |
-| X5 (move after cancel) | Only "Reinstated" is offered; a move is rejected; Mike sees "Reinstated … the game is ON …" and the cancellation as superseded |
+| X5 (move after cancel) | No publish control on the cancelled game; a domain publish call is rejected with `game-cancelled`; Mike still sees "FINAL – Cancelled" |
 | H1 (move, then cancel) | Still allowed; only the cancellation is current |
 | X2–X4 validation messages | Unchanged; now traced to REQ-01 / REQ-03 |
+| CR-5: move field + time | One FINAL notice per recipient per channel; label shows both old → new values |
+| CR-6: game after kickoff | Tagged "Started" in every list; parents still see it until the end of the day; no publish or heads-up control; its unconfirmed alerts leave "Needs your confirmation" and get no texts or calls |
+| CR-7: delivery status | A new notice shows "sent"; after +1 min it shows "delivered" (or "failed" with a reason); missing contacts are "failed" at once |
 
 ---
 
-## 8. Traceability updates for V2
+## 11. Traceability updates for V2
 
 In `docs/traceability.md`, add a **V2 status** column (or a "V2" section). Update these rows:
 
 - **REQ-05**: new code location (heads-up guard); status in V2; reference CR-1 / OBS-1.
-- **REQ-03**: change types now include "reinstated"; validation rules now specified.
 - **REQ-01**: verification-time rule now specified.
-- **REQ-20 (new)**: evidence "none — assumption from V1 evaluation (OBS-2), D-1"; goals G-13, G-21; code; tests; status.
+- **REQ-03**: "moved" now covers field, time or both (CR-5); a cancellation is final (CR-2, D-7); validation rules now specified (CR-4).
+- **REQ-13**: "sent" status added (CR-7, OBS-9); status in V2.
+- **REQ-15**: same-day started games stay in the parent view (CR-6).
+- **REQ-20 (new, CR-6)**: evidence "none — assumption from V1 evaluation (OBS-8)"; goals G-11, G-02, G-39, G-85; code; tests; status.
 
 ---
 
@@ -174,14 +276,17 @@ In `docs/traceability.md`, add a **V2 status** column (or a "V2" section). Updat
 ```
 Revise the existing feature spec specs/001-game-change-notice/spec.md for Version 2.
 Do NOT create a new feature directory and do NOT change any code yet.
-Apply exactly the spec changes in docs/v2-change-request.md sections 2–5 (CR-1, CR-2 option A,
-CR-3, CR-4):
-- replace REQ-05 with the revised text; add REQ-20; extend REQ-03 and REQ-01;
-- add the new acceptance scenarios to User Stories 1 and 4;
-- add OQ-4, OQ-5, OQ-6 to Open Questions and the O-1 accepted risk to Assumptions;
+Apply exactly the spec changes in docs/v2-change-request.md sections 2–8 (CR-1, CR-2 option B,
+CR-3, CR-4, CR-5, CR-6, CR-7):
+- replace REQ-05 with the revised text; replace REQ-03 with the revised text in section 6;
+  extend REQ-01 and REQ-15; add REQ-20 (started games);
+- add the new acceptance scenarios to User Stories 1, 3, 4 and 5;
+- add OQ-4, OQ-5, OQ-6, OQ-7 to Open Questions; add to Assumptions: the O-1 accepted risk,
+  D-7 (a cancellation is final), "Started" as the only post-kickoff state, and the simulated
+  delivery timing (sent -> delivered after 1 simulated minute);
 - fix User Story 1 scenario 6 (Saturday -> Sunday);
-- in Conflict Decisions, record the CR-2 decision (option A) and that the urgent case of CF-3 is
-  unresolved.
+- in Conflict Decisions, record the CR-2 decision (option B, option A kept as the alternative)
+  and that the urgent case of CF-3 is unresolved.
 Keep all existing REQ IDs, goal IDs and interview citations unchanged. Mark every new or changed
 item with "(V2)". Set the spec status to "Draft (V2)". Follow the constitution.
 Then show me a summary of the changes.

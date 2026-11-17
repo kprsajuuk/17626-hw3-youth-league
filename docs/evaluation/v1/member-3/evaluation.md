@@ -4,29 +4,16 @@
 **Version evaluated:** tag `v1`. Run it with `python3 -m http.server 8000 --directory app` and open <http://localhost:8000/>.
 **Team summary:** [`../team-summary.md`](../team-summary.md)
 
-> Write this evaluation from your own use of the prototype. Put screenshots in [`screenshots/`](screenshots/). Number your observations with your own prefix (e.g. M3-1, M3-2) so they can be merged into the team summary.
+> Write this evaluation from your own use of the prototype. Put screenshots in [`screenshots/`](screenshots/). Number your observations with team IDs (OBS-n): take the next free number in the team summary and add your row there as `OBS-n (M3)`. Gaps in the numbering are fine.
 
 ## How I evaluated
 
-- Walkthrough steps followed (see `specs/001-game-change-notice/quickstart.md`):
+- Walkthrough steps followed (see `specs/001-game-change-notice/quickstart.md`)
 - Extra situations I tried (things a stakeholder might plausibly do that the spec may not cover):
-
-## Walkthrough results
-
-| Step | Result (Pass / Fail) | Notes |
-|---|---|---|
-| A1–A5 Publish rules | | |
-| B1–B5 Recipients and privacy | | |
-| C1–C3 Urgent escalation | | |
-| D1–D2 Non-urgent escalation | | |
-| E3 Coach status | | |
-| F1–F3 Heads-up | | |
-| G1 Parent combined view | | |
-| H1 Two changes | | |
 
 ## Observations
 
-### M3-1 — <short title>
+### OBS-n — <short title>
 
 - **What I did:**
 - **What I saw:** (screenshot: `screenshots/...`)
