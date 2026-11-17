@@ -19,19 +19,20 @@ no real messages are sent and no external services are called.
 
 ## Live demo
 
-The tagged release `v1` is deployed as a static site on Netlify:
+The tagged releases `v1` and `v2` are deployed as two separate static sites on Netlify:
 
-| Page | URL |
-|------|-----|
-| App | <https://youth-league-v1.netlify.app/> |
-| Unit tests | <https://youth-league-v1.netlify.app/tests/> (expect `72 / 72 tests passed`) |
+| Version | Page | URL |
+|---------|------|-----|
+| V2 | App | <https://youth-league-v2.netlify.app/> |
+| V2 | Unit tests | <https://youth-league-v2.netlify.app/tests/> (expect `95 / 95 tests passed`) |
+| V1 | App | <https://youth-league-v1.netlify.app/> |
+| V1 | Unit tests | <https://youth-league-v1.netlify.app/tests/> (expect `72 / 72 tests passed`) |
 
-This deployment is a fixed snapshot of tag `v1` (commit `0f11290`). It is not connected to the
-repository, so later commits on `main` do not change it. To deploy it again, export the tagged
-`app/` folder and drag the folder into the site's **Deploys** page on Netlify:
+Each deployment is a fixed snapshot of its tag: `v1` (commit `0f11290`) and `v2` (commit `8f6aa67`). Neither is connected to the repository, so later commits do not change them. To deploy one again, export the tagged `app/` folder and drag the folder into that site's **Deploys** page on Netlify:
 
 ```bash
 mkdir -p deploy-v1 && git archive v1:app | tar -x -C deploy-v1
+mkdir -p deploy-v2 && git archive v2:app | tar -x -C deploy-v2
 ```
 
 ## Run locally
@@ -223,11 +224,3 @@ For a V2 iteration, revise `spec.md` first (for example with `/speckit-specify` 
 - **"Address already in use".** Another server is on port 8000. Stop it, or use `8001` as shown above.
 - **The page looks empty or broken when opened as a file.** ES modules do not load from
   `file://`. Always go through the local server.
-
-## Status (V1)
-
-- All 64 tasks are done. 72/72 unit tests pass, and walkthroughs A–H pass (see "Last validated"
-  in `quickstart.md`).
-- **Not yet validated:** SC-001, SC-003 and SC-004 need timed sessions with real test users.
-- **Known spec gap for V2:** an example in spec User Story 1 places the U12 game on Saturday, while
-  the seed data has it on Sunday.
