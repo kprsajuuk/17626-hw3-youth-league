@@ -176,6 +176,8 @@ Add an acceptance scenario to User Story 1:
 
 Extend REQ-15: "upcoming games" → "upcoming games, and games that started earlier the same day (tagged "Started", REQ-20)".
 
+Extend REQ-12 ("until they confirm, the alert MUST stay prominently visible") with "unless the game has started (REQ-20)", and REQ-10 with "no text or call is sent once the game has started (REQ-20)". Without this, REQ-12 and REQ-10 would contradict REQ-20. *(Added while revising the spec, 2026-11-17.)*
+
 Add acceptance scenarios to User Story 1 and User Story 5:
 
 > **[REQ-20]** **Given** the demo clock is past the kickoff of U10 Blue vs U10 Red, **When** the administrator or the coach opens the game list, **Then** the game is tagged "Started" and no publish or heads-up control is shown.
@@ -255,11 +257,11 @@ Revise REQ-13 (last part):
 
 Replace the Assumptions bullet "A family counts as 'confirmed receipt' once any notified parent in that family confirms … A restricted parent never counts toward or appears in that family's status." with the per-child rule above, keeping "for a child they are restricted for, a parent never counts toward or appears in that child's status".
 
-Add an acceptance scenario to User Story 3:
+Add an acceptance scenario to User Story 6 (delivery escalation):
 
 > **[REQ-10, REQ-13, REQ-08]** **Given** Family E, where Wes is restricted for Eli but not for Emma and Erin is notified about both, and an urgent change to U10 Blue vs U10 Red, **When** only Wes confirms receipt and 2 minutes pass, **Then** Wes gets no text or call; Erin's alert is still under "Needs your confirmation" and she receives the simulated call; the coach's list still shows Family E as not confirmed, naming Erin (for Eli E.) and never naming Wes next to Eli.
 
-Existing User Story 3 scenario 6 (two unrestricted parents Y and Z; Y confirms, no text to either) must still pass unchanged.
+Existing User Story 6 scenario 6 (two unrestricted parents Y and Z; Y confirms, no text to either) must still pass unchanged.
 
 Add an open question:
 
@@ -287,7 +289,7 @@ Add an open question:
 
 > Coaches receive the in-app alert and email for their team's changes and, like parents, the text under REQ-10 (fallback after 5 minutes, or immediately when urgent) until they confirm receipt. Phone calls go only to parents (REQ-11). *(V2, CR-9)*
 
-Add an acceptance scenario to User Story 3:
+Add an acceptance scenario to User Story 6 (delivery escalation):
 
 > **[REQ-10]** **Given** a non-urgent change to U12 Red vs U12 Gold, **When** 5 minutes pass and neither coach has confirmed receipt, **Then** both coaches receive the simulated text and neither receives a call.
 
@@ -343,7 +345,7 @@ echo '{"feature_directory": "specs/001-game-change-notice"}' > .specify/feature.
 | CR-6: game after kickoff | Tagged "Started" in every list; parents still see it until the end of the day; no publish or heads-up control; its unconfirmed alerts leave "Needs your confirmation" and get no texts or calls |
 | CR-7: delivery status | A new notice shows "sent"; after +1 min it shows "delivered" (or "failed" with a reason); missing contacts are "failed" at once |
 | CR-8: Family E, only Wes confirms (urgent) | Wes is not escalated; Erin still sees "Needs your confirmation" and gets the call after 2 min; Ray's list shows Family E as not confirmed, naming Erin (for Eli E.) only |
-| CR-8: regression, two unrestricted parents | User Story 3 scenario 6 unchanged: one parent confirms, neither is texted, the family shows as confirmed |
+| CR-8: regression, two unrestricted parents | User Story 6 scenario 6 unchanged: one parent confirms, neither is texted, the family shows as confirmed |
 | CR-9: coach texts | Same as V1: coaches get the fallback / urgent text, never a call |
 
 ---
@@ -373,7 +375,7 @@ CR-3, CR-4, CR-5, CR-6, CR-7, CR-8, CR-9):
 - replace REQ-05 with the revised text; replace REQ-03 with the revised text in section 6;
   extend REQ-01 and REQ-15; add REQ-20 (started games); revise REQ-10 and REQ-13 and the
   confirmation Clarification for per-child confirmation (CR-8); make REQ-10 say "parent or coach" (CR-9);
-- add the new acceptance scenarios to User Stories 1, 3, 4 and 5;
+- add the new acceptance scenarios to User Stories 1, 3, 4, 5 and 6;
 - add OQ-4 … OQ-9 to Open Questions; rewrite the two Assumptions bullets on family confirmation
   (CR-8) and on coaches' channels (CR-9); add to Assumptions: the O-1 accepted risk,
   D-7 (a cancellation is final), "Started" as the only post-kickoff state, and the simulated
