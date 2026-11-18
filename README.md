@@ -1,6 +1,6 @@
 # Game Change Notice — Youth Soccer League Prototype
 
-17-626 Requirements for Information Systems, HW4 (team project).
+17-626 Requirements for Information Systems, HW3 (team project).
 
 When a youth soccer game is **cancelled or moved**, the league administrator verifies the change
 and publishes **one official status**. The **right families, and only them**, are notified, and
@@ -20,6 +20,17 @@ no real messages are sent and no external services are called.
 | 5 | Requirements Analysis and Learning Log | [`docs/learning-log.md`](docs/learning-log.md) |
 
 Both tags are also listed on the repository's [tags page](https://github.com/kprsajuuk/17626-hw3-youth-league/tags).
+Each tag is a frozen snapshot of its version. The README inside each snapshot was written before that
+version was deployed, so it may lack later details such as the Netlify URLs. This README on `main` is the
+current one. `main` contains V2 and the full history from V1.
+
+## Roles and Responsibilities
+
+| Member | Contributions |
+|--------|---------------|
+| _Member 1 name_ | _TODO_ |
+| _Member 2 name_ | _TODO_ |
+| _Member 3 name_ | _TODO_ |
 
 ## Stakeholders
 
@@ -44,7 +55,7 @@ Each deployment is a fixed snapshot of its tag: `v1` (commit `0f11290`) and `v2`
 
 ```bash
 mkdir -p deploy-v1 && git archive v1:app | tar -x -C deploy-v1
-mkdir -p deploy-v2 && git archive v2:app | tar -x -C deploy-v2
+mkdir -p deploy-v2 && git archive refs/tags/v2:app | tar -x -C deploy-v2
 ```
 
 ## Run locally
@@ -114,11 +125,11 @@ The full scripted walkthroughs (A–H) and expected results are in
 
 | User story | Priority | Requirements |
 |------------|----------|--------------|
-| US1 Administrator publishes a verified change | P1 | REQ-01–04, 06, 16 |
+| US1 Administrator publishes a verified change | P1 | REQ-01–04, 06, 16, 20 |
 | US2 Affected families are notified and confirm receipt | P1 | REQ-07–09, 12, 17 |
 | US3 Coach sees who has not confirmed | P1 | REQ-13, 14, 18 |
 | US4 Coach sends an UNCONFIRMED heads-up | P2 | REQ-05 |
-| US5 Parent sees all children's games in one view | P2 | REQ-15 |
+| US5 Parent sees all children's games in one view | P2 | REQ-15, 20 |
 | US6 Text and call escalation | P3 | REQ-10, 11 |
 
 Key decisions, from the spec's conflict table and clarifications:
@@ -129,7 +140,13 @@ Key decisions, from the spec's conflict table and clarifications:
 - **Texts (CF-3):** a text is a fallback after **5 min** without confirmation, or is sent at once
   when kickoff is within **2 h**.
 - **Calls:** for urgent changes, a call goes out if there is still no confirmation after 2 min.
-- **Family rule:** a family counts as confirmed when any notified parent confirms.
+- **Confirmation rule (revised in V2, CR-8):** confirmation is counted per child. A child is
+  confirmed once a parent who was notified about that child confirms, so a court-order-restricted
+  parent's confirmation does not cover the restricted child.
+
+The V2 changes (CR-1 to CR-9) and the V1 observations behind them are in
+[`docs/v2-change-request.md`](docs/v2-change-request.md) and
+[`docs/evaluation/v1/team-summary.md`](docs/evaluation/v1/team-summary.md).
 
 **Out of scope:** rides and pickups, coach records (attendance and playing time), master-schedule
 upkeep, background checks, and the phone relay for families without smartphones.
@@ -150,14 +167,18 @@ upkeep, background checks, and the phone relay for families without smartphones.
 │   │   └── ui/                  # Admin, coach and parent views, demo bar, shared components
 │   └── tests/                   # Browser test runner + *.test.js (named by REQ ID)
 ├── docs/                        # Unified goal model (G-xx, D-x, O-x, CF-x) and diagrams
-│   └── goal-model.md
+│   ├── goal-model.md            # Goal model and decisions
+│   ├── traceability.md          # Requirements Traceability Matrix
+│   ├── learning-log.md          # Requirements analysis and reflection (Step 6)
+│   ├── v2-change-request.md     # What V2 changes, and why
+│   └── evaluation/v1/           # Each member's V1 evaluation + team summary
 ├── specs/001-game-change-notice/
-│   ├── spec.md                  # Requirements REQ-01–REQ-19, scenarios, conflicts, open questions
+│   ├── spec.md                  # Requirements REQ-01–REQ-20, scenarios, conflicts, open questions
 │   ├── plan.md                  # Technical plan + constitution check
 │   ├── research.md data-model.md quickstart.md
 │   ├── contracts/               # Domain API and UI view contracts
 │   ├── checklists/requirements.md
-│   └── tasks.md                 # 64 tasks, all done
+│   └── tasks.md                 # 74 tasks (64 for V1, 10 for V2), all done
 ├── .specify/memory/constitution.md   # Project principles (v1.0.0)
 └── .claude/                     # Spec Kit skills and the preview launch config
 ```
@@ -195,7 +216,7 @@ Run the unit tests: start the server, then open <http://localhost:8000/tests/>.
 Check that every requirement is referenced in the code:
 
 ```bash
-for i in $(seq -w 1 19); do printf "REQ-%s:%s " $i $(grep -rl "REQ-$i" app/src | wc -l | tr -d ' '); done; echo
+for i in $(seq -w 1 20); do printf "REQ-%s:%s " $i $(grep -rl "REQ-$i" app/src | wc -l | tr -d ' '); done; echo
 ```
 
 Check that there are no network calls or out-of-scope features (expect no output):

@@ -1,4 +1,4 @@
-# Unified Goal Model (HW4, Steps 1–2; revised for V2 in Step 5)
+# Unified Goal Model (HW3, Steps 1–2; revised for V2 in Step 5)
 
 This document merges the three HW2 goal models of our team into one model, records how
 overlapping and conflicting goals were reconciled, and defines the sprint scope used for

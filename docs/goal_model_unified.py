@@ -1,5 +1,5 @@
 """
-17-626 HW4 (Spec-Driven Development) - Step 1/2: unified team goal model.
+17-626 HW3 (Spec-Driven Development) - Step 1/2: unified team goal model.
 
 Merges the three HW2 combined goal models of our team:
     YH = Yunhan  (HW2/model-v2/goal_model_combined.py + individual models, G-1..G-42)

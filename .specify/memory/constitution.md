@@ -21,7 +21,7 @@ Sync Impact Report
 
 # Game Change Notice Prototype Constitution
 
-Youth soccer league coordination system, 17-626 HW4 team project.
+Youth soccer league coordination system, 17-626 HW3 team project.
 
 ## Core Principles
 
