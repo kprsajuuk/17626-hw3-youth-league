@@ -9,6 +9,18 @@ coaches can see **who has confirmed receipt**.
 This is a requirements-validation prototype built with Spec Kit. It uses **mock data only**:
 no real messages are sent and no external services are called.
 
+## Deliverables
+
+| # | Deliverable | Link |
+|---|-------------|------|
+| 1 | GitHub Version 1: initial goal model, spec, Spec Kit artifacts and prototype source (tag `v1`) | [`v1` @ `0f11290`](https://github.com/kprsajuuk/17626-hw3-youth-league/tree/0f11290aa8b45899a58d9d69172b5a1cbc96bbf4) |
+| 2 | GitHub Version 2: revised goal model, spec, Spec Kit artifacts and prototype source (tag `v2`) | [`v2` @ `8f6aa67`](https://github.com/kprsajuuk/17626-hw3-youth-league/tree/8f6aa670a1769e3c38ae9491e815791294b084b3) |
+| 3 | Prototype V1 URL | <https://youth-league-v1.netlify.app/> |
+| 4 | Prototype V2 URL | <https://youth-league-v2.netlify.app/> |
+| 5 | Requirements Analysis and Learning Log | [`docs/learning-log.md`](docs/learning-log.md) |
+
+Both tags are also listed on the repository's [tags page](https://github.com/kprsajuuk/17626-hw3-youth-league/tags).
+
 ## Stakeholders
 
 | Persona | Role | What they do in the prototype |
