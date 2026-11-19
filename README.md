@@ -17,7 +17,7 @@ no real messages are sent and no external services are called.
 | 2 | GitHub Version 2: revised goal model, spec, Spec Kit artifacts and prototype source (tag `v2`) | [`v2` @ `8f6aa67`](https://github.com/kprsajuuk/17626-hw3-youth-league/tree/8f6aa670a1769e3c38ae9491e815791294b084b3) |
 | 3 | Prototype V1 URL | <https://youth-league-v1.netlify.app/> |
 | 4 | Prototype V2 URL | <https://youth-league-v2.netlify.app/> |
-| 5 | Requirements Analysis and Learning Log | [`docs/learning-log.md`](docs/learning-log.md) |
+| 5 | Requirements Analysis and Learning Log | [`docs/learning-log.md`](docs/learning-log.md) (selection, conflicts, evaluation, revisions, reflection) and [`docs/traceability.md`](docs/traceability.md) (interview evidence, goals, requirements, code, and V2 status) |
 
 Both tags are also listed on the repository's [tags page](https://github.com/kprsajuuk/17626-hw3-youth-league/tags).
 Each tag is a frozen snapshot of its version. The README inside each snapshot was written before that
@@ -72,7 +72,7 @@ python3 -m http.server 8000 --directory app
 | Page | URL |
 |------|-----|
 | App | <http://localhost:8000/> |
-| Unit tests | <http://localhost:8000/tests/> (expect `72 / 72 tests passed`) |
+| Unit tests | <http://localhost:8000/tests/> (on `main` / V2, expect `95 / 95 tests passed`; the `v1` tag expects `72 / 72`) |
 
 Stop the server with `Ctrl+C`. If port 8000 is busy, use another port:
 
