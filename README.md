@@ -28,9 +28,9 @@ current one. `main` contains V2 and the full history from V1.
 
 | Member | Contributions |
 |--------|---------------|
-| _Member 1 name_ | _TODO_ |
-| _Member 2 name_ | _TODO_ |
-| _Member 3 name_ | _TODO_ |
+| Member 1: Yunhan Li | Set up the repository and Spec Kit; built Prototype V1; evaluated V1; drafted the traceability matrix and V2 change request |
+| Member 2: Lynn Chien | Evaluated V1; updated the traceability matrix and change request; revised the goal model and spec for V2; implemented Prototype V2; deployed both prototypes to Netlify |
+| Member 3: Ying Wong | Evaluated V1; wrote the learning log and report; reorganized the repository and README for final submission |
 
 ## Stakeholders
 

@@ -3,7 +3,7 @@
 **Inputs:** `docs/evaluation/v1/team-summary.md` (consolidated observations; OBS-1…OBS-6 first reported in `docs/evaluation/v1/member-1/evaluation.md`) and `docs/traceability.md` (V1 matrix).
 **Baseline:** V1 = tag `v1` (commit `0f11290` plus the evaluation docs).
 **Status:** ready for V2. Covers all V1 observations, OBS-1…OBS-11 (Members 1, 2 and 3). Team decisions on CR-2, CR-5, CR-6, CR-7 and the OBS-1 classification were made on 2026-11-16; decisions on CR-8 and CR-9 (Member 3's findings) were made on 2026-11-17 (see §1).
-**Owner of V2:** _<name>_. The owner supervises the SE agent; the team reviews the spec before any code is changed.
+**Owner of V2:** Lynn. The owner supervises the SE agent; the team reviews the spec before any code is changed.
 
 This document tells the V2 owner **what** to change, **why** (stakeholder goal and evidence), and **in which order**. It follows Step 5 of the assignment:
 
