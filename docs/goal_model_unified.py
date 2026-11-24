@@ -38,6 +38,16 @@ V2 (after evaluating Prototype V1; see docs/v2-change-request.md and goal-model.
     D-7  new domain property: an official cancellation is final (team assumption)     (CR-2, OBS-2)
     notes added to G-07, G-11, G-13, G-14, D-2 (CR-1, CR-2, CR-5, CR-6), G-33, D-4 (CR-8),
     G-30 (CR-9), CF-3 and O-1 (CR-3). Every V2 change is tagged "V2:" in its note.
+
+A4 (change request packet C15; see docs/a4/analysis.md). Nothing removed; every A4 change is
+tagged "A4:" in its note:
+    G-86 new softgoal Improve[StatusReadableAtAGlanceOnPhone] under G-77          (A4-CR-4)
+    O-1a AlertDroppedAtKickoffWhileUnconfirmed (refines O-1) obstructs G-35        (A4-CR-2, selected)
+    O-3  CustodyRestrictionInferableFromAckList obstructs G-64                     (A4-CR-1)
+    O-4  StaleReminderAfterSupersede obstructs G-02, resolved by G-10 (no defect)  (A4-CR-3)
+    O-5  AckStatusMisreadOnPhone obstructs G-37, resolution G-86 proposed           (A4-CR-4)
+    CF-9 new conflict G-86 vs. G-64 (A4-CR-4 vs. A4-CR-1); CF-3 extended          (A4-CR-2)
+    notes on G-11, G-33, G-35, G-36, G-64
 """
 from goalmodeling.schema import *
 
@@ -167,7 +177,9 @@ d07 = dom("D-7", "An official cancellation is final (team assumption; confirm wi
           note="V2: added after V1 evaluation (CR-2 option B, OBS-2); no interview evidence; risk against D-1 accepted")
 g11 = g(A, "G-11", "GameEntryShowsCurrentStatus", cond="GameChanged", sprint=True,
         ref=AND("P2", g12, g13, g14, d02, d07), src=("YG:B29", "YG:B89"), merged=("YG G-10",),
-        note="V2: started state made explicit (CR-6, OBS-8); no direct interview evidence")
+        note="V2: started state made explicit (CR-6, OBS-8); no direct interview evidence. "
+             "A4: OQ-7 answered by Mike (A4-CR-2): an unconfirmed change still matters after kickoff, "
+             "so 'Started' must no longer end reminders (O-1a)")
 
 # master schedule upkeep (out of sprint scope)
 g16 = g(A, "G-16", "ConflictShownAgainstFieldAvailability", cond="FieldOrTeamChangeReported", agent=SCHEDULE,
@@ -226,16 +238,21 @@ g26 = g(A, "G-26", "NoticeDelivered", cond="StatusPublished", sprint=True,
 g34 = g(A, "G-34", "RecipientAcknowledges", cond="AlertReceived", agent=PARENT, sprint=True,
         src=("YG:M73", "YG:R41", "LN:B45", "LN:B48", "LN:B61"), merged=("YG G-27", "LN G-13"))
 g35 = g(M, "G-35", "ChangeAlertVisible", cond="Not Acknowledged", agent=FAMILY, sprint=True,
-        src=("LN:M11", "LN:M59"), merged=("LN G-26",))
+        src=("LN:M11", "LN:M59"), merged=("LN G-26",),
+        note="A4: obstructed by O-1a; V2 drops the alert and reminders at kickoff (REQ-20). "
+             "Selected change A4-CR-2 keeps them for unconfirmed parents (YG:M25, LN:M57)")
 g36 = g(M, "G-36", "AckStatusShownPerRecipient", agent=NOTIFY, sprint=True,
         src=("YH:B36", "YH:R15", "YH:R31", "YH:M30", "LN:R23", "LN:R25", "LN:R51", "YG:R41", "YG:B55", "YG:B59"),
-        merged=("YH G-10", "YH G-21", "LN G-45", "YG G-28"))
+        merged=("YH G-10", "YH G-21", "LN G-45", "YG G-28"),
+        note="A4: the per-parent, per-child ack list lets a viewer infer a court order (O-3, A4-CR-1); "
+             "status marks hard to read on a phone (O-5, A4-CR-4)")
 g37 = g(A, "G-37", "NonAcknowledgerContacted", cond="NoAckBeforeDeparture", agent=COACH, sprint=True,
         src=("YH:R31", "YH:R33", "YH:M30", "YG:R41"), merged=("YH G-22", "YG G-29"))
 g33 = g(A, "G-33", "ReceiptConfirmed", cond="NoticeSent", sprint=True,
         ref=AND("P6", g34, g35, g36, g37), src=("YH:R15", "YH:R31", "YH:B36", "YG:R39", "YG:R92", "YG:B59"),
         merged=("YH G-20", "YG G-26"),
-        note="V2: receipt confirmation counted per child, not per family (CR-8, OBS-10); assumption, ask Brenda (OQ-8)")
+        note="V2: receipt confirmation counted per child, not per family (CR-8, OBS-10); assumption, ask Brenda (OQ-8). "
+             "A4: OQ-8 still open and now blocks A4-CR-1 (how the coach reaches a separated parent)")
 g38 = g(V, "G-38", "ReadGuaranteeImplied", agent=NOTIFY, cat="NFR", sprint=True,
         src=("YG:B24", "YG:B100", "YG:B111"), merged=("YG G-30",), note="honesty about what an ack means")
 
@@ -311,7 +328,9 @@ g63 = g(M, "G-63", "FamilyInfoVisibleOnlyToAuthorizedRoles", agent=ACCESS, cat="
         src=("LN:B50", "LN:B70", "LN:B74"), merged=("LN G-20",))
 g64 = g(V, "G-64", "UnnecessaryPersonalInfoShown", agent=ACCESS, cat="NFR",
         src=("YG:B66", "YG:B70", "YG:B73", "YG:M96", "LN:M14"), merged=("YG G-50", "YG G-51", "YG G-52"),
-        note="no child full name / home address for rides; no public photos")
+        note="no child full name / home address for rides; no public photos. "
+             "A4: also no court order inferable from the coach's ack list (O-3, A4-CR-1, YG:B73); "
+             "takes priority over G-86 (CF-9)")
 d05 = dom("D-5", "Insurer requires background checks for drivers of non-family children",
           src=("YG:B66",), merged=("YG D-5",))
 g66 = g(A, "G-66", "ApprovedDriverRecordReviewed", cond="DriverStatusRelevant", agent=ADMIN, cat="NFR",
@@ -360,8 +379,14 @@ g85 = g(V, "G-85", "DuplicateAndTrivialNotifications", agent=NOTIFY, cat="NFR", 
         src=("YG:M77", "YG:B55"), merged=("YG G-84",))
 g82 = g(S, "G-82", "Minimize[NotificationNoise]", cat="NFR", sprint=True, ref=AND("H6", g83, g84, g85, complete=False),
         src=("YG:M77", "YG:R20"), merged=("YG G-81",))
+# A4 (A4-CR-4): readability of the ack status on a phone at the field; no new interview, evidence from
+# the existing transcripts and the R4 reproduction on Prototype V2 (docs/a4/analysis.md)
+g86 = g(S, "G-86", "Improve[StatusReadableAtAGlanceOnPhone]", cat="NFR",
+        src=("YG:M105", "YG:R41", "LN:R15"), merged=(),
+        note="A4: added for A4-CR-4 (usability / accessibility, WCAG 1.4.11); contributes to G-36 and G-37; "
+             "resolves O-5 (proposed, not implemented); conflicts with G-64 (CF-9)")
 g77 = g(S, "G-77", "Increase[AdoptionByBusyParentsAndVolunteers]", cat="NFR",
-        ref=AND("H6", g78, g79, g80, g81, g82, complete=False),
+        ref=AND("H6", g78, g79, g80, g81, g82, g86, complete=False),
         src=("YG:R112", "YG:R47", "YG:M105", "LN:R54"), merged=("YG G-75", "LN G-54"))
 
 # =============================== Root ======================================================
@@ -373,30 +398,60 @@ g01 = g(S, "G-01", "Improve[SafeAndWellCoordinatedGameDay]", sprint=True,
 # =============================== Obstacles =================================================
 o1 = Obstacle("<b>O-1</b> AlertMissedWhileOnShift")      # YH Mike obstacle; YG O-1 (YG:M25, YG:B20)
 o2 = Obstacle("<b>O-2</b> DriverDelayedOrNoShow")         # LN Mike obstacle (LN:M35, LN:M37); YG O-2 (YG:M58)
+# A4 obstacles (change request packet C15; ratings and evidence in docs/a4/analysis.md)
+o1a = Obstacle("<b>O-1a</b> AlertDroppedAtKickoffWhileUnconfirmed")  # A4-CR-2 (selected); refines O-1
+o3 = Obstacle("<b>O-3</b> CustodyRestrictionInferableFromAckList")   # A4-CR-1
+o4 = Obstacle("<b>O-4</b> StaleReminderAfterSupersede")              # A4-CR-3 (not reproducible in V2)
+o5 = Obstacle("<b>O-5</b> AckStatusMisreadOnPhone")                  # A4-CR-4
 OBSTACLES = {
     "O-1": dict(name="AlertMissedWhileOnShift", obstructs="G-26", resolved_by=["G-30", "G-31"],
                 src=["YH:M23", "YG:M25", "YG:B20"], merged=["YH ParentOnShiftMissesText", "YG O-1"],
                 accepted_risk="V2: heads-ups (G-08) never escalate to text or call; accepted risk (CR-3, OBS-4; ask Mike, OQ-6)"),
     "O-2": dict(name="DriverDelayedOrNoShow", obstructs="G-53", resolved_by=["G-56", "G-57"],
                 src=["LN:M35", "LN:M37", "YG:M58"], merged=["LN DriverDelayedOrPlanFallsThrough", "YG O-2"]),
+    "O-1a": dict(name="AlertDroppedAtKickoffWhileUnconfirmed", obstructs="G-35", resolved_by=[],
+                 src=["YG:M25", "LN:M57", "YG:M35"], merged=[], rating="High / Major",
+                 a4="A4: refines O-1; caused by REQ-20 (V2 assumption, OQ-7). Selected request A4-CR-2; "
+                    "resolution specified in docs/a4/quality-requirement.md"),
+    "O-3": dict(name="CustodyRestrictionInferableFromAckList", obstructs="G-64", resolved_by=[],
+                src=["YG:B66", "YG:B68", "YG:B73"], merged=[], rating="High / Major",
+                a4="A4: A4-CR-1, ranked 2nd and not implemented this sprint; open until Brenda answers OQ-8"),
+    "O-4": dict(name="StaleReminderAfterSupersede", obstructs="G-02", resolved_by=["G-10"],
+                src=["YG:B41", "LN:B61"], merged=[], rating="Low / Minor",
+                a4="A4: A4-CR-3, no defect: V2 cancels reminders of a superseded notice (G-10, REQ-04)"),
+    "O-5": dict(name="AckStatusMisreadOnPhone", obstructs="G-37", resolved_by=["G-86"],
+                src=["YG:M105", "LN:R15", "YG:R41"], merged=[], rating="High / Minor",
+                a4="A4: A4-CR-4, change of approach; G-86 proposed, not implemented this sprint"),
 }
 
 # =============================== Conflicts =================================================
 CONFLICTS = {
     "CF-1": ("G-08", "G-04", "speed vs. verification", "compromise", True),
     "CF-2": ("G-09", "G-05", "coach updates game vs. only admin makes it official", "prioritize G-05", True),
-    "CF-3": ("G-29", "G-85", "text on every notice vs. avoid duplicate notifications", "compromise via G-30; V2: urgent case unresolved (CR-3, OBS-3; ask Mike, OQ-6)", True),
+    "CF-3": ("G-29", "G-85", "text on every notice vs. avoid duplicate notifications", "compromise via G-30; V2: urgent case unresolved (CR-3, OBS-3; ask Mike, OQ-6). "
+             "A4: after kickoff, reminders to parents who have not confirmed take priority over G-85, "
+             "bounded and only until confirmed (A4-CR-2, O-1a)", True),
     "CF-4": ("G-46", "G-59", "system suggests nearby parent vs. system must not match/approve", "unresolved - ask Brenda", False),
     "CF-5": ("G-47", "G-58", "coach arranges rides vs. league not liable", "prioritize G-58; inconsistent Ray interviews", False),
     "CF-6": ("G-56", "G-60", "missed-pickup alert vs. ride not shown as league-guaranteed", "unresolved - ask Brenda", False),
     "CF-7": ("G-44", "G-65", "parent's own trust vs. insurer background check", "domain constraint wins; both kept", False),
     "CF-8": ("G-68", "G-25", "parent sees child's messages vs. restricted parent excluded", "resolved by guard G-69", False),
+    "CF-9": ("G-86", "G-64", "status readable at a glance vs. no unnecessary personal info",
+             "A4: prioritize G-64 (Constitution VII: privacy wins; O-3 Major vs. O-5 Minor). "
+             "Both kept; open, neither A4-CR-1 nor A4-CR-4 implemented this sprint", False),
 }
+
+A4_OBSTACLE_LINKS = [
+    ObstructionLink(g35, o1a),
+    ObstructionLink(g64, o3),
+    ObstructionLink(g02, o4), ResolutionLink(g10, o4),
+    ObstructionLink(g37, o5), ResolutionLink(g86, o5),
+]
 
 links = [ConflictLink(NODES[a], NODES[b]) for a, b, *_ in CONFLICTS.values()] + [
     ObstructionLink(g26, o1), ResolutionLink(g30, o1), ResolutionLink(g31, o1),
     ObstructionLink(g53, o2), ResolutionLink(g56, o2), ResolutionLink(g57, o2),
-]
+] + A4_OBSTACLE_LINKS
 
 # =============================== Coverage check ============================================
 MEMBER_GOALS = {
@@ -419,7 +474,8 @@ def check_coverage():
 
 SPRINT_LINKS = [ConflictLink(NODES[a], NODES[b]) for k, (a, b, *_) in CONFLICTS.items()
                 if k in ("CF-1", "CF-2", "CF-3")] + [
-    ObstructionLink(g26, o1), ResolutionLink(g30, o1), ResolutionLink(g31, o1)]
+    ObstructionLink(g26, o1), ResolutionLink(g30, o1), ResolutionLink(g31, o1),
+    ObstructionLink(g35, o1a)]   # A4: the selected request A4-CR-2 acts on the sprint branch
 
 
 def build(scope="full"):

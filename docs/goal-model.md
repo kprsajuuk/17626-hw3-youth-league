@@ -1,4 +1,4 @@
-# Unified Goal Model (HW3, Steps 1–2; revised for V2 in Step 5)
+# Unified Goal Model (HW3, Steps 1–2; revised for V2 in Step 5; extended for A4)
 
 This document merges the three HW2 goal models of our team into one model, records how
 overlapping and conflicting goals were reconciled, and defines the sprint scope used for
@@ -8,15 +8,19 @@ the Spec Kit specification.
 were added (D-6, D-7) and ten goals, properties, conflicts or obstacles got a note tagged
 "V2:". Nothing was removed. See **§6 V2 changes**. The V1 model is preserved at tag `v1`.
 
+**A4.** The change request packet C15 (`docs/a4/analysis.md`) added one softgoal (G-86), four
+obstacles (O-1a, O-3, O-4, O-5) and one conflict (CF-9), and extended CF-3. Each change is
+tagged "A4:" in the model. Nothing was removed. See **§7 A4 changes**.
+
 | File | Purpose |
 |---|---|
 | `goal_model_unified.py` | Single source of truth, written with the course `goalmodeling` package (v0.1.6). `python goal_model_unified.py` prints the full model; `python goal_model_unified.py sprint` prints only the sprint branches. Every run also checks that each member goal is mapped. |
-| `export_tables.py` | Regenerates Appendix A and B and the §6 V2 table from the `.py` (`unified`, `reverse`, `v2`). |
+| `export_tables.py` | Regenerates Appendix A and B, the §6 V2 table and the §7 A4 table from the `.py` (`unified`, `reverse`, `v2`, `a4`). |
 | `goal_model_full.png/.svg`, `goal_model_sprint.png/.svg` | **Official diagrams**: standard `goalmodeling` 0.1.6 output (bottom-up), rendered with Mermaid CLI. The only change is that the conflict glyph is replaced with ⚡ so it shows in all fonts. Sprint membership is listed in §5 and Appendix A. |
 | `mermaid_full.txt`, `mermaid_sprint.txt` | mermaid.live links to the official graphs. |
 | `preview_full.png`, `preview_sprint.png` | Draft views drawn with a stand-in renderer, root on the left. **Green** = in sprint, **yellow** = tacit, **grey dashed** = rejected alternative. Kept as easier-to-read companions. **V1 snapshot:** not regenerated for V2, so D-6 and D-7 are missing; the official diagrams above are current. |
 
-**Regenerate the diagrams**
+**Regenerate the diagrams** (the `goalmodeling` wheel requires Python 3.10 or later)
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -25,6 +29,11 @@ pip install --no-index goalmodeling-0.1.6-py3-none-any.whl
 python goal_model_unified.py sprint > sprint.txt          # last line = mermaid.live link
 sed '$d' sprint.txt > sprint.mmd && npx -p @mermaid-js/mermaid-cli mmdc -i sprint.mmd -o goal_model_sprint.png -s 2 -b white
 ```
+
+*(A4)* The A4 diagrams were rendered from the same `.mmd` output with Mermaid 11.4.1 in a browser
+(no Node.js on the machine used), default theme, PNG at up to 2× and at most 16,000 px wide. The
+layout therefore differs slightly from the V2 mermaid-cli images; the graph content is the
+generated output of `goal_model_unified.py`.
 
 ## 1. Sources and conventions
 
@@ -75,7 +84,8 @@ G-01 Improve[SafeAndWellCoordinatedGameDay]            (H12: abstracted from YH 
 ├─ D LIABILITY G-58 Avoid[LeagueLiableForRidesOrCustody]             — out of sprint
 ├─ E PRIVACY   G-62 Maintain[ChildSafetyAndPrivacy]                    — out of sprint (except G-23 in B)
 ├─ F RECORDS   G-71 Improve[PlayingTimeFairness]                       — out of sprint
-└─ G ADOPTION  G-77 Increase[Adoption…]   (G-80 alert ≤1 min, G-82 noise: G-83, G-85 in sprint)
+└─ G ADOPTION  G-77 Increase[Adoption…]   (G-80 alert ≤1 min, G-82 noise: G-83, G-85 in sprint;
+                                           A4: G-86 status readable at a glance on a phone)
 ```
 
 **Structural decisions made while merging**
@@ -101,6 +111,7 @@ G-01 Improve[SafeAndWellCoordinatedGameDay]            (H12: abstracted from YH 
 - G-04 → G-03 (publish only after verifying). G-21 → G-04 (nothing reaches families until something is published).
 - G-22 **depends on correct team lists** (G-18/G-19), which are out of scope. The sprint therefore **assumes the roster data is correct** (mock data).
 - G-30 (text fallback) depends on G-34 (ack), because the fallback fires only if no ack arrives.
+- *(A4)* Reminding unconfirmed families after kickoff (A4-CR-2, O-1a on G-35) depends on G-10 replacing earlier notices, so that no reminder carries a superseded notice (O-4, A4-CR-3). V2 already satisfies this (`docs/a4/analysis.md`, R3).
 - C → B: G-50 *RideReconfirmed If GameChanged* is triggered by the change notice. Rides therefore can't be built properly before REACH works, which is one reason C is in a later sprint.
 
 ### 4.3 Conflicts (kept as ⚡ links; none removed)
@@ -108,12 +119,13 @@ G-01 Improve[SafeAndWellCoordinatedGameDay]            (H12: abstracted from YH 
 |---|---|---|---|
 | **CF-1** | G-08 heads-up while pending ⚡ G-04 publish only when verified | Ray/Mike want speed (YH:R54, YH:M73, YG:R47) vs. Brenda wants accuracy (YH:B59, YG:B111); YG C-6 is the same tension | **Compromise.** The heads-up is allowed but always labelled *UNCONFIRMED*. It never changes the official status, and the final notice replaces it. **In sprint** because it is highly uncertain whether families will actually tell the two apart. |
 | **CF-2** | G-09 coach updates the game ⚡ G-05 only the admin makes it official | Lynn's Ray (LN:R19, R21) vs. Brenda in all three sets (YH:B55, LN:B68, YG:B113) | **Prioritize G-05** (authority and liability). G-09 is kept as a rejected alternative. Ray's real need, speed, is met by G-08. |
-| **CF-3** | G-29 text with every notice ⚡ G-85 avoid duplicate notifications | YH Mike wants text always (YH:M23, M73) vs. YG Mike: "too many duplicate messages would be annoying" (YG:M77) and push with SMS *fallback* (YG:M73) | **Compromise G-30:** text is sent if there is no ack within 5 min, or right away if the change is urgent (kickoff within 2 h); G-31 also places a call. The 5-min and 2-h thresholds are assumptions to check in V1. **In sprint.** **V2:** V1 showed that the compromise covers only non-urgent changes; for urgent changes every channel still fires at once, plus a call (OBS-3). The urgent case stays **unresolved** (ask Mike, OQ-6). Texts to coaches (CR-9) are an accepted cost against G-85. |
+| **CF-3** | G-29 text with every notice ⚡ G-85 avoid duplicate notifications | YH Mike wants text always (YH:M23, M73) vs. YG Mike: "too many duplicate messages would be annoying" (YG:M77) and push with SMS *fallback* (YG:M73) | **Compromise G-30:** text is sent if there is no ack within 5 min, or right away if the change is urgent (kickoff within 2 h); G-31 also places a call. The 5-min and 2-h thresholds are assumptions to check in V1. **In sprint.** **V2:** V1 showed that the compromise covers only non-urgent changes; for urgent changes every channel still fires at once, plus a call (OBS-3). The urgent case stays **unresolved** (ask Mike, OQ-6). Texts to coaches (CR-9) are an accepted cost against G-85. **A4:** after kickoff, reminders to parents who have not confirmed take priority over G-85 (A4-CR-2, O-1a). G-85 keeps ground: only unconfirmed parents, only until they confirm, and only up to a bounded point after kickoff (set in `docs/a4/quality-requirement.md`). |
 | **CF-4** | G-46 system suggests a nearby trusted parent ⚡ G-59 system must not match or approve rides | Mike (LN:M61, YG:M25) vs. Brenda (LN:B54, YG:B83, B100) | **Unresolved.** Does *suggesting* count as *matching*? We need to ask Brenda. Deferred. |
 | **CF-5** | G-47 coach matches families / finds a backup driver ⚡ G-58 league not liable | Mike (YH:M38), Lynn's Ray (LN:R44), Ying's Ray (YG:R59) vs. Brenda (YH:B34, LN:B54) and **Yunhan's Ray, who refuses** (YH:R8) | **Prioritize G-58.** We also record that the three Ray interviews contradict each other: two say they informally connect families, one refuses to coordinate. Needs clarification. |
 | **CF-6** | G-56 missed-pickup alert ⚡ G-60 ride must not look league-guaranteed | Mike (YH:M18, YG:M42) vs. Brenda (YG:B80, B83); YG C-1 | **Unresolved.** A candidate fix is to word the alert as parent-to-parent status and show it with the G-61 disclaimer. Deferred. |
 | **CF-7** | G-44 parent's own trust (met / vouched for) ⚡ G-65 background check on file | Mike (YG:M96) vs. the insurer rule (D-5, YG:B66); YG C-3 | **The domain constraint wins.** Both goals stay: a parent's trust is extra on top of a required check, not a replacement for it. Deferred. |
 | **CF-8** | G-68 parent can view the child's messages ⚡ G-25 restricted parent excluded | Mike (YG:M121) vs. Brenda (YG:B66); YG C-5 | **Resolved by guard G-69** (check custody before showing messages). Deferred. |
+| **CF-9** *(A4)* | G-86 status readable at a glance on a phone ⚡ G-64 no unnecessary personal info shown | Ray, A4-CR-4 (YG:R41, LN:R15) vs. Brenda, A4-CR-1 (YG:B66, YG:B73) | **Prioritize G-64.** Constitution VII: where privacy and another requirement conflict, privacy wins; O-3 is rated Major, O-5 Minor. Both goals kept. **Open:** neither request is implemented this sprint; a family-level layout may satisfy both (ask Brenda and Ray). |
 
 **Not a conflict (an AND constraint):** parents arranging rides directly (G-43) and keeping restricted information out of ride discussions (G-45). Both can hold at once, as YH already found.
 
@@ -192,6 +204,37 @@ the goal model.
 | D-7 An official cancellation is final (team assumption; confirm with Brenda, OQ-5) | added after V1 evaluation (CR-2 option B, OBS-2); no interview evidence; risk against D-1 accepted |
 | CF-3 G-29 vs. G-85 (text on every notice vs. avoid duplicate notifications) | urgent case unresolved (CR-3, OBS-3; ask Mike, OQ-6) |
 | O-1 AlertMissedWhileOnShift | heads-ups (G-08) never escalate to text or call; accepted risk (CR-3, OBS-4; ask Mike, OQ-6) |
+
+## 7. A4 changes (change request packet C15)
+
+The four requests of packet C15 are analyzed, rated and ranked in `docs/a4/analysis.md`. The team
+selected **A4-CR-2**. The model records all four requests, not only the selected one, so that the
+obstacles and the conflict stay visible for later sprints (Constitution III). Each change is tagged
+"A4:" in `goal_model_unified.py`; the table below is generated (`python export_tables.py a4`).
+
+| Request | Obstacle (rating) | Model change |
+|---|---|---|
+| A4-CR-1 (Brenda) | O-3 CustodyRestrictionInferableFromAckList (High / Major) | New O-3 obstructs G-64; notes on G-64, G-36, G-33 (OQ-8); CF-9 |
+| A4-CR-2 (Mike), **selected** | O-1a AlertDroppedAtKickoffWhileUnconfirmed (High / Major) | New O-1a (refines O-1) obstructs G-35; notes on G-35, G-11 (OQ-7 answered); CF-3 extended |
+| A4-CR-3 (Ray) | O-4 StaleReminderAfterSupersede (Low / Minor) | New O-4 obstructs G-02, already resolved by G-10 (no defect, works as specified) |
+| A4-CR-4 (Ray) | O-5 AckStatusMisreadOnPhone (High / Minor) | New softgoal G-86 under G-77 resolves O-5 (proposed); note on G-36; CF-9 |
+
+**A4 notes in the model** (generated)
+
+| Element | A4 change (from the model) |
+|---|---|
+| G-11 GameEntryShowsCurrentStatus | OQ-7 answered by Mike (A4-CR-2): an unconfirmed change still matters after kickoff, so 'Started' must no longer end reminders (O-1a) |
+| G-33 ReceiptConfirmed | OQ-8 still open and now blocks A4-CR-1 (how the coach reaches a separated parent) |
+| G-35 ChangeAlertVisible | obstructed by O-1a; V2 drops the alert and reminders at kickoff (REQ-20). Selected change A4-CR-2 keeps them for unconfirmed parents (YG:M25, LN:M57) |
+| G-36 AckStatusShownPerRecipient | the per-parent, per-child ack list lets a viewer infer a court order (O-3, A4-CR-1); status marks hard to read on a phone (O-5, A4-CR-4) |
+| G-64 UnnecessaryPersonalInfoShown | also no court order inferable from the coach's ack list (O-3, A4-CR-1, YG:B73); takes priority over G-86 (CF-9) |
+| G-86 Improve[StatusReadableAtAGlanceOnPhone] | added for A4-CR-4 (usability / accessibility, WCAG 1.4.11); contributes to G-36 and G-37; resolves O-5 (proposed, not implemented); conflicts with G-64 (CF-9) |
+| CF-3 G-29 vs. G-85 (text on every notice vs. avoid duplicate notifications) | after kickoff, reminders to parents who have not confirmed take priority over G-85, bounded and only until confirmed (A4-CR-2, O-1a) |
+| CF-9 G-86 vs. G-64 (status readable at a glance vs. no unnecessary personal info) | prioritize G-64 (Constitution VII: privacy wins; O-3 Major vs. O-5 Minor). Both kept; open, neither A4-CR-1 nor A4-CR-4 implemented this sprint |
+| O-1a AlertDroppedAtKickoffWhileUnconfirmed | obstructs G-35; resolved by none yet; rated High / Major (YG:M25, LN:M57, YG:M35). refines O-1; caused by REQ-20 (V2 assumption, OQ-7). Selected request A4-CR-2; resolution specified in docs/a4/quality-requirement.md |
+| O-3 CustodyRestrictionInferableFromAckList | obstructs G-64; resolved by none yet; rated High / Major (YG:B66, YG:B68, YG:B73). A4-CR-1, ranked 2nd and not implemented this sprint; open until Brenda answers OQ-8 |
+| O-4 StaleReminderAfterSupersede | obstructs G-02; resolved by G-10; rated Low / Minor (YG:B41, LN:B61). A4-CR-3, no defect: V2 cancels reminders of a superseded notice (G-10, REQ-04) |
+| O-5 AckStatusMisreadOnPhone | obstructs G-37; resolved by G-86; rated High / Minor (YG:M105, LN:R15, YG:R41). A4-CR-4, change of approach; G-86 proposed, not implemented this sprint |
 
 ## Appendix A — Unified goals (generated by `export_tables.py`)
 
@@ -282,6 +325,7 @@ the goal model.
 | G-83 | Achieve | AlertMarkedUrgent **If** GameChangeOrPickupAtRisk | NotificationService | NFR | ✅ | YG G-82 | YG:M84, YG:M116, YG:R39 |
 | G-84 | Maintain | TeamAnnouncementsSeparateFromParentChat | TeamChannel | NFR |  | YG G-83 | YG:R32, YG:R47 |
 | G-85 | Avoid | DuplicateAndTrivialNotifications | NotificationService | NFR | ✅ | YG G-84 | YG:M77, YG:B55 |
+| G-86 | Soft | Improve[StatusReadableAtAGlanceOnPhone] | — | NFR |  | — | YG:M105, YG:R41, LN:R15 |
 | D-1 | Domain | City usually decides rainouts by ~3 p.m.; timing not guaranteed | — | - | ✅ | YG D-1 | YH:B20, YH:B40, YG:B102, YG:B105 |
 | D-2 | Domain | A game change is a cancellation, a field move or a time move | — | - | ✅ | YG D-3 | YG:B10, YG:R17 |
 | D-3 | Domain | Parks dept supplies field availability; it can change weekly | — | - |  | YG D-2 | YG:B102 |
@@ -290,7 +334,7 @@ the goal model.
 | D-6 | Domain | A change is pending only until a FINAL notice for that game is published | — | - | ✅ | — | — (not in transcript) |
 | D-7 | Domain | An official cancellation is final (team assumption; confirm with Brenda, OQ-5) | — | - | ✅ | — | — (not in transcript) |
 
-**Obstacles:** O-1 AlertMissedWhileOnShift obstructs G-26 and is resolved by G-30 and G-31 (YH:M23, YG:M25, YG:B20). *V2:* heads-ups (G-08) never escalate, so O-1 stays unresolved for heads-ups; accepted risk (CR-3, OBS-4, OQ-6). O-2 DriverDelayedOrNoShow obstructs G-53 and is resolved by G-56 and G-57 (LN:M35, LN:M37, YG:M58).
+**Obstacles:** O-1 AlertMissedWhileOnShift obstructs G-26 and is resolved by G-30 and G-31 (YH:M23, YG:M25, YG:B20). *V2:* heads-ups (G-08) never escalate, so O-1 stays unresolved for heads-ups; accepted risk (CR-3, OBS-4, OQ-6). O-2 DriverDelayedOrNoShow obstructs G-53 and is resolved by G-56 and G-57 (LN:M35, LN:M37, YG:M58). *A4:* O-1a AlertDroppedAtKickoffWhileUnconfirmed (refines O-1) obstructs G-35 (YG:M25, LN:M57, YG:M35); O-3 CustodyRestrictionInferableFromAckList obstructs G-64 (YG:B66, YG:B68, YG:B73); O-4 StaleReminderAfterSupersede obstructs G-02 and is resolved by G-10 (YG:B41, LN:B61); O-5 AckStatusMisreadOnPhone obstructs G-37 and is resolved by G-86, proposed (YG:M105, LN:R15, YG:R41). See §7.
 
 ## Appendix B — Member goal → unified goal
 
